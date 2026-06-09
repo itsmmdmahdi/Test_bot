@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <style>
+        body { margin: 0; background: #111; color: white; font-family: sans-serif; text-align: center; overflow: hidden; user-select: none; }
+        canvas { background: #222; display: block; margin: 0 auto; max-width: 100%; max-height: 50vh; border-bottom: 4px solid #00adb5; }
+        #hud { position: absolute; top: 15px; left: 15px; font-size: 16px; font-weight: bold; background: rgba(0,0,0,0.6); padding: 8px 12px; border-radius: 8px; text-align: right; }
+        .controls { display: flex; justify-content: center; margin-top: 20px; }
+        .btn { width: 120px; height: 75px; background: #333; border: 3px solid #00adb5; border-radius: 15px; color: white; font-size: 22px; font-weight: bold; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 10px #00adb5; -webkit-user-select: none; }
+        .btn:active { background: #00adb5; transform: scale(0.95); }
+    </style>
+</head>
+<body>
+    <div id="hud">
+        <div>امتیاز: <span id="score">0</span></div>
+        <div style="color: #00adb5;">رکورد: <span id="highscore">0</span></div>
+    </div>
+    <canvas id="gameCanvas" width="400" height="500"></canvas>
+
+    <div class="controls">
+        <div class="btn" id="jumpBtn">پرواز 🔼</div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+        const scoreElement = document.getElementById("score");
+        const highscoreElement = document.getElementById("highscore");
+
+        let score = 0;
+        let gameOver = false;
+        let highscore = localStorage.getItem("flappy_highscore") || 0;
+        highscoreElement.innerText = highscore;
+
+        const bird = { x: 50, y: 200, radius: 14, gravity: 0.4, velocity: 0, jump: -6.5 };
+        const pipes = [];
+        let pipeTimer = 0;
+
+        document.getElementById("jumpBtn").addEventListener("touchstart", (e) => { e.preventDefault(); bird.velocity = bird.jump; });
+        document.getElementById("jumpBtn").addEventListener("mousedown", () => bird.velocity = bird.jump);
+
+        function spawnPipe() {
+            const gap = 130;
+            const topHeight = Math.random() * (canvas.height - gap - 150) + 50;
+            pipes.push({ x: canvas.width, top: topHeight, bottom: canvas.height - topHeight - gap, width: 50, passed: false });
+        }
+
+        function update() {
+            if (gameOver) return;
+
+            bird.velocity += bird.gravity;
+            bird.y += bird.velocity;
+
+            if (bird.y + bird.radius > canvas.height || bird.y - bird.radius < 0) { triggerGameOver(); }
+
+            pipeTimer++;
+            if (pipeTimer % 100 === 0) spawnPipe();
+
+            for (let i = pipes.length - 1; i >= 0; i--) {
+                pipes[i].x -= 2.5;
+
+                // فرمول چک تصادف
+                if (bird.x + bird.radius > pipes[i].x && bird.x - bird.radius < pipes[i].x + pipes[i].width) {
+                    if (bird.y - bird.radius < pipes[i].top || bird.y + bird.radius > canvas.height - pipes[i].bottom) {
+                        triggerGameOver();
+                    }
+                }
+
+                if (!pipes[i].passed && pipes[i].x + pipes[i].width < bird.x) {
+                    pipes[i].passed = true;
+                    score++;
+                    scoreElement.innerText = score;
+                }
+
+                if (pipes[i].x + pipes[i].width < 0) pipes.splice(i, 1);
+            }
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // پرنده نئونی
+            ctx.fillStyle = "#00adb5";
+            ctx.shadowBlur = 10; ctx.shadowColor = "#00adb5";
+            ctx.beginPath(); ctx.arc(bird.x, bird.y, bird.radius, 0, Math.PI * 2); ctx.fill();
+
+            // لوله‌ها
+            ctx.fillStyle = "#ff2e63"; ctx.shadowColor = "#ff2e63";
+            for (let p of pipes) {
+                ctx.fillRect(p.x, 0, p.width, p.top);
+                ctx.fillRect(p.x, canvas.height - p.bottom, p.width, p.bottom);
+            }
+            ctx.shadowBlur = 0;
+        }
+
+        function triggerGameOver() {
+            gameOver = true;
+            if (score > highscore) { localStorage.setItem("flappy_highscore", score); alert("🎉 رکورد جدید: " + score); }
+            else { alert("بازی تمام شد! امتیاز: " + score); }
+            document.location.reload();
+        }
+
+        function loop() { update(); draw(); requestAnimationFrame(loop); }
+        loop();
+    </script>
+</body>
+</html>
