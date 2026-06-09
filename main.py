@@ -1,14 +1,16 @@
+import asyncio
+import sys
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
 
 TOKEN = "8924529360:AAE04ukDwrdyqhT97N8WMBonru6s8YtqJaY"
 GROUP_ID = 3960957591  # آیدی گروه
 
-# لینک‌های ناشناس
+# لینک‌های ناشناس (نکته: دکمه‌های تلگرام نباید لینک خالی داشته باشند، موقتاً لینک مهدی رو گذاشتم تا خودت آپدیت کنی)
 ADMIN_LINKS = {
     "mahdi": "https://t.me/begoo?start=_3688788873410",
-    "admin2": "",
-    "admin3": ""
+    "admin2": "https://t.me/begoo?start=_3688788873410",
+    "admin3": "https://t.me/begoo?start=_3688788873410"
 }
 
 MY_FEEDBACK_LINK = "https://t.me/begoo?start=_3688788873410"
@@ -84,9 +86,32 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
 
-app = Application.builder().token(TOKEN).build()
+async def main():
+    # ساخت اپلیکیشن ربات
+    app = Application.builder().token(TOKEN).build()
 
-app.add_handler(CommandHandler("start", start))
-app.add_handler(CallbackQueryHandler(button))
+    # ثبت هندلرها
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(CallbackQueryHandler(button))
 
-app.run_polling()
+    # راه‌اندازی اصولی ربات سازگار با محیط‌های ابری سرور
+    await app.initialize()
+    await app.start()
+    await app.updater.start_polling(allowed_updates=Update.ALL_TYPES)
+    
+    print("Bot is running...")
+    
+    # روشن نگه داشتن اسکریپت در سرور
+    try:
+        while True:
+            await asyncio.sleep(3600)
+    except (KeyboardInterrupt, SystemExit):
+        await app.updater.stop()
+        await app.stop()
+
+if __name__ == '__main__':
+    # حل مشکل Event Loop روی سرورهای لینوکسی و رندر
+    if sys.platform == 'win32':
+        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+    
+    asyncio.run(main())
