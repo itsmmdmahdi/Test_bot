@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <style>
         body { margin: 0; background: #111; color: white; font-family: sans-serif; text-align: center; overflow: hidden; user-select: none; }
+        #hud { display: flex; justify-content: space-around; font-size: 18px; font-weight: bold; margin-top: 10px; padding: 0 20px; }
         canvas { background: #1a1a1a; display: block; margin: 10px auto; max-width: 90%; max-height: 45vh; border: 2px solid #333; }
-        #score { font-size: 20px; font-weight: bold; margin-top: 5px; }
         .dpad { display: grid; grid-template-columns: repeat(3, 70px); grid-template-rows: repeat(3, 70px); gap: 5px; justify-content: center; margin-top: 15px; }
         .dbtn { background: #222; border: 2px solid #ff2e63; color: white; font-size: 24px; font-weight: bold; display: flex; align-items: center; justify-content: center; border-radius: 12px; box-shadow: 0 0 8px #ff2e63; -webkit-user-select: none; }
         .dbtn:active { background: #ff2e63; transform: scale(0.95); }
@@ -14,7 +14,11 @@
     </style>
 </head>
 <body>
-    <div id="score">امتیاز مار: 0</div>
+    <div id="hud">
+        <div>امتیاز: <span id="score">0</span></div>
+        <div style="color: #ff2e63;">رکورد: <span id="highscore">0</span></div>
+    </div>
+    
     <canvas id="snakeCanvas" width="400" height="400"></canvas>
 
     <div class="dpad">
@@ -33,20 +37,36 @@
         const canvas = document.getElementById("snakeCanvas");
         const ctx = canvas.getContext("2d");
         const scoreElement = document.getElementById("score");
+        const highscoreElement = document.getElementById("highscore");
 
         const grid = 20;
         let count = 0;
         let score = 0;
         let isDead = false;
 
+        // خواندن رکورد مار از حافظه
+        let highscore = localStorage.getItem("snake_highscore") || 0;
+        highscoreElement.innerText = highscore;
+
         let snake = { x: 160, y: 160, dx: grid, dy: 0, cells: [{x: 160, y: 160}, {x: 140, y: 160}], maxCells: 4 };
         let apple = { x: 320, y: 320 };
 
         function getRandomInt(min, max) { return Math.floor(Math.random() * (max - min)) + min; }
 
+        function checkAndSaveHighScore() {
+            if (score > highscore) {
+                localStorage.setItem("snake_highscore", score);
+                alert("🎉 عالی بود! رکورد جدید برای مار ثبت شد: " + score);
+            } else {
+                alert("بازی تمام شد! امتیاز شما: " + score);
+            }
+        }
+
         function resetGame() {
             snake.x = 160; snake.y = 160; snake.cells = [{x: 160, y: 160}, {x: 140, y: 160}]; snake.maxCells = 4;
-            snake.dx = grid; snake.dy = 0; score = 0; scoreElement.innerText = "امتیاز مار: " + score;
+            snake.dx = grid; snake.dy = 0; score = 0; scoreElement.innerText = score;
+            highscore = localStorage.getItem("snake_highscore") || 0;
+            highscoreElement.innerText = highscore;
             apple.x = getRandomInt(0, 20) * grid; apple.y = getRandomInt(0, 20) * grid;
             isDead = false;
         }
@@ -71,8 +91,6 @@
 
         function loop() {
             requestAnimationFrame(loop);
-            
-            // عدد 12 یعنی حرکت مار بسیار آرام‌تر و قابل کنترل‌تر شده است (قبلا 7 بود)
             if (++count < 12) return; 
             count = 0;
 
@@ -81,10 +99,9 @@
             ctx.clearRect(0,0,canvas.width,canvas.height);
             snake.x += snake.dx; snake.y += snake.dy;
 
-            // سیستم باخت در صورت برخورد با دیوارهای چهارطرف صفحه
             if (snake.x < 0 || snake.x >= canvas.width || snake.y < 0 || snake.y >= canvas.height) {
                 isDead = true;
-                alert("مار به دیوار خورد! بازی تمام شد.");
+                checkAndSaveHighScore();
                 resetGame();
                 return;
             }
@@ -102,16 +119,15 @@
                 if (cell.x === apple.x && cell.y === apple.y) {
                     snake.maxCells++;
                     score++;
-                    scoreElement.innerText = "امتیاز مار: " + score;
+                    scoreElement.innerText = score;
                     apple.x = getRandomInt(0, 20) * grid;
                     apple.y = getRandomInt(0, 20) * grid;
                 }
                 
-                // سیستم باخت در صورت برخورد مار با بدن خودش
                 for (let i = index + 1; i < snake.cells.length; i++) {
                     if (cell.x === snake.cells[i].x && cell.y === snake.cells[i].y) {
                         isDead = true;
-                        alert("مار خودش رو خورد! بازی تمام شد.");
+                        checkAndSaveHighScore();
                         resetGame();
                         return;
                     }
