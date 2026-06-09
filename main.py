@@ -4,7 +4,7 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
 
 TOKEN = "8924529360:AAE04ukDwrdyqhT97N8WMBonru6s8YtqJaY"
-GROUP_ID = 3960957591  # آیدی گروه
+GROUP_ID = -1003960957591  # آیدی گروه
 
 # لینک‌های ناشناس (نکته: دکمه‌های تلگرام نباید لینک خالی داشته باشند، موقتاً لینک مهدی رو گذاشتم تا خودت آپدیت کنی)
 ADMIN_LINKS = {
