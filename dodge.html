@@ -36,26 +36,26 @@
         let moveUp = false;
         let moveDown = false;
 
-        // کنترل با دکمه‌های لمسی
-        document.getElementById("btnUp").addEventListener("touchstart", () => moveUp = true);
+        document.getElementById("btnUp").addEventListener("touchstart", (e) => { e.preventDefault(); moveUp = true; });
         document.getElementById("btnUp").addEventListener("touchend", () => moveUp = false);
-        document.getElementById("btnDown").addEventListener("touchstart", () => moveDown = true);
+        document.getElementById("btnDown").addEventListener("touchstart", (e) => { e.preventDefault(); moveDown = true; });
         document.getElementById("btnDown").addEventListener("touchend", () => moveDown = false);
 
-        // پشتیبانی از کلیک موس (برای تست راحت‌تر)
         document.getElementById("btnUp").addEventListener("mousedown", () => moveUp = true);
         document.getElementById("btnUp").addEventListener("mouseup", () => moveUp = false);
         document.getElementById("btnDown").addEventListener("mousedown", () => moveDown = true);
         document.getElementById("btnDown").addEventListener("mouseup", () => moveDown = false);
 
         function spawnObstacle() {
-            const height = Math.random() * 40 + 20;
+            const height = Math.random() * 50 + 20;
+            // سرعت اولیه بسیار آرام (2.5) تنظیم شده و با افزایش امتیاز تندتر میشه
+            const currentSpeed = 2.5 + (score * 0.3); 
             obstacles.push({
                 x: canvas.width,
                 y: Math.random() * (canvas.height - height),
                 width: 25,
                 height: height,
-                speed: 4 + (score * 0.2)
+                speed: currentSpeed > 10 ? 10 : currentSpeed // سقف سرعت برای اینکه غیرممکن نشه
             });
         }
 
@@ -66,7 +66,7 @@
             if (moveDown && player.y < canvas.height - player.height) player.y += player.speed;
 
             obstacleTimer++;
-            if (obstacleTimer % 50 === 0) spawnObstacle();
+            if (obstacleTimer % 60 === 0) spawnObstacle();
 
             for (let i = obstacles.length - 1; i >= 0; i--) {
                 obstacles[i].x -= obstacles[i].speed;
@@ -76,7 +76,7 @@
                     player.y < obstacles[i].y + obstacles[i].height &&
                     player.y + player.height > obstacles[i].y) {
                     gameOver = true;
-                    alert("بازی تمام شد! امتیاز: " + score);
+                    alert("بازی تمام شد! امتیاز شما: " + score);
                     document.location.reload();
                 }
 
