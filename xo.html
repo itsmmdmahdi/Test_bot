@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>دوز کلاسیک</title>
+    <style>
+        body { margin: 0; background: #111; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; font-family: sans-serif; overflow: hidden; }
+        .board { display: grid; grid-template-columns: repeat(3, 80px); gap: 10px; }
+        .cell { width: 80px; height: 80px; background: #222; border: 2px solid #333; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 40px; cursor: pointer; transition: 0.2s; }
+        .cell:active { transform: scale(0.9); }
+        .x { color: #ff2e63; }
+        .o { color: #4ecca3; }
+        #message { margin-top: 20px; font-size: 20px; color: #00adb5; }
+    </style>
+</head>
+<body>
+
+    <div class="board" id="board"></div>
+    <div id="message">نوبت: X</div>
+
+    <script>
+        let board = Array(9).fill(null);
+        let turn = 'X';
+        const boardEl = document.getElementById('board');
+        const msgEl = document.getElementById('message');
+
+        function render() {
+            boardEl.innerHTML = '';
+            board.forEach((val, i) => {
+                const cell = document.createElement('div');
+                cell.className = 'cell';
+                cell.innerHTML = val ? `<span class="${val.toLowerCase()}">${val}</span>` : '';
+                cell.onclick = () => play(i);
+                boardEl.appendChild(cell);
+            });
+        }
+
+        function play(i) {
+            if (!board[i]) {
+                board[i] = turn;
+                checkWinner();
+                turn = turn === 'X' ? 'O' : 'X';
+                msgEl.innerText = 'نوبت: ' + turn;
+                render();
+            }
+        }
+
+        function checkWinner() {
+            const wins = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+            for(let w of wins) {
+                if(board[w[0]] && board[w[0]] === board[w[1]] && board[w[0]] === board[w[2]]) {
+                    alert('برنده: ' + board[w[0]]);
+                    location.reload();
+                }
+            }
+            if(!board.includes(null)) { alert('مساوی شد!'); location.reload(); }
+        }
+
+        render();
+    </script>
+</body>
+</html>
