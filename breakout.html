@@ -31,6 +31,30 @@
         let score = 0; let gameOver = false; let gameStarted = false;
         let highscore = localStorage.getItem("break_highscore") || 0; highscoreElement.innerText = highscore;
 
+        // ماژول صوتی آجرشکن
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playSound(type) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain); gain.connect(audioCtx.destination);
+
+            if (type === 'paddle') {
+                osc.type = 'sine'; osc.frequency.setValueAtTime(250, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+            } else if (type === 'brick') {
+                osc.type = 'triangle'; osc.frequency.setValueAtTime(550, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.08, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.08);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.08);
+            } else if (type === 'lose') {
+                osc.type = 'sawtooth'; osc.frequency.setValueAtTime(200, audioCtx.currentTime);
+                osc.frequency.linearRampToValueAtTime(50, audioCtx.currentTime + 0.4);
+                gain.gain.setValueAtTime(0.2, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.4);
+            }
+        }
+
         const paddle = { w: 80, h: 12, x: 140, y: 370, speed: 7.5 };
         const ball = { x: 180, y: 358, radius: 7, dx: 1.9, dy: -1.9 };
 
@@ -40,7 +64,7 @@
 
         let moveLeft = false; let moveRight = false;
 
-        function startEvent() { if(!gameStarted) { gameStarted = true; hintElement.style.opacity = "0"; } }
+        function startEvent() { if(!gameStarted) { gameStarted = true; hintElement.style.opacity = "0"; if (audioCtx.state === 'suspended') audioCtx.resume(); } }
 
         document.getElementById("leftBtn").addEventListener("touchstart", (e) => { e.preventDefault(); startEvent(); moveLeft = true; });
         document.getElementById("leftBtn").addEventListener("touchend", (e) => { e.preventDefault(); moveLeft = false; });
@@ -54,10 +78,8 @@
 
         function update() {
             if (gameOver) return;
-            
             if (moveLeft && paddle.x > 0) paddle.x -= paddle.speed;
             if (moveRight && paddle.x < canvas.width - paddle.w) paddle.x += paddle.speed;
-
             if (!gameStarted) { ball.x = paddle.x + paddle.w/2; return; }
 
             ball.x += ball.dx; ball.y += ball.dy;
@@ -65,16 +87,19 @@
             if(ball.y - ball.radius < 0) ball.dy = -ball.dy;
 
             if(ball.y + ball.radius > paddle.y && ball.x > paddle.x && ball.x < paddle.x + paddle.w) { 
-                ball.dy = -ball.dy; 
-                ball.y = paddle.y - ball.radius; 
+                ball.dy = -ball.dy; ball.y = paddle.y - ball.radius; 
                 let hitPoint = ball.x - (paddle.x + paddle.w/2);
                 ball.dx = hitPoint * 0.06;
+                playSound('paddle'); // صدای برخورد به راکت
             }
             else if(ball.y + ball.radius > canvas.height) {
                 gameOver = true;
-                if (score > highscore) { localStorage.setItem("break_highscore", score); alert("🎉 رکورد جدید: " + score); }
-                else { alert("بازی تمام شد!"); }
-                document.location.reload();
+                playSound('lose'); // صدای باخت
+                setTimeout(() => {
+                    if (score > highscore) { localStorage.setItem("break_highscore", score); alert("🎉 رکورد جدید: " + score); }
+                    else { alert("بازی تمام شد!"); }
+                    document.location.reload();
+                }, 400);
             }
 
             for(let c=0; c<brickCols; c++) {
@@ -83,6 +108,7 @@
                     if(b.status == 1) {
                         if(ball.x > b.x && ball.x < b.x+brickW && ball.y > b.y && ball.y < b.y+brickH) {
                             ball.dy = -ball.dy; b.status = 0; score++; scoreElement.innerText = score;
+                            playSound('brick'); // صدای شکستن آجر
                             if(score === brickRows * brickCols) { alert("🏆 تبریک! شما کل آجرها رو شکوندید!"); document.location.reload(); }
                         }
                     }
@@ -92,11 +118,9 @@
 
         function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
             ctx.fillStyle = "#00adb5"; ctx.shadowBlur = 10; ctx.shadowColor = "#00adb5";
             ctx.beginPath();
-            if (ctx.roundRect) { ctx.roundRect(paddle.x, paddle.y, paddle.w, paddle.h, 6); } 
-            else { ctx.rect(paddle.x, paddle.y, paddle.w, paddle.h); }
+            if (ctx.roundRect) { ctx.roundRect(paddle.x, paddle.y, paddle.w, paddle.h, 6); } else { ctx.rect(paddle.x, paddle.y, paddle.w, paddle.h); }
             ctx.fill();
             
             ctx.fillStyle = "#fff"; ctx.shadowColor = "#fff";
@@ -109,8 +133,7 @@
                         let brickX = (c*(brickW+brickPadding))+brickOffsetLeft; let brickY = (r*(brickH+brickPadding))+brickOffsetTop;
                         bricks[c][r].x = brickX; bricks[c][r].y = brickY;
                         ctx.beginPath();
-                        if (ctx.roundRect) { ctx.roundRect(brickX, brickY, brickW, brickH, 4); }
-                        else { ctx.rect(brickX, brickY, brickW, brickH); }
+                        if (ctx.roundRect) { ctx.roundRect(brickX, brickY, brickW, brickH, 4); } else { ctx.rect(brickX, brickY, brickW, brickH); }
                         ctx.fill();
                     }
                 }
