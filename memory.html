@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>بازی حافظه - تنظیمات</title>
+    <style>
+        body { background: #111; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; font-family: sans-serif; }
+        .grid { display: grid; gap: 10px; margin-top: 20px; }
+        .card { width: 60px; height: 60px; background: #00adb5; border-radius: 5px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 20px; transition: 0.3s; }
+        .hidden { background: #333; color: transparent; }
+        .menu { display: flex; gap: 10px; }
+        button { padding: 10px 15px; cursor: pointer; background: #00adb5; border: none; color: white; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <div id="setup">
+        <h2>انتخاب حالت بازی:</h2>
+        <div class="menu">
+            <button onclick="startGame(8, 2, 4)">۸ تایی (۲x۴)</button>
+            <button onclick="startGame(16, 4, 4)">۱۶ تایی (۴x۴)</button>
+            <button onclick="startGame(20, 4, 5)">۲۰ تایی (۴x۵)</button>
+        </div>
+    </div>
+    <div class="grid" id="grid"></div>
+
+    <script>
+        let flipped = [];
+
+        function startGame(total, rows, cols) {
+            document.getElementById('setup').style.display = 'none';
+            const grid = document.getElementById('grid');
+            grid.style.gridTemplateColumns = `repeat(${cols}, 60px)`;
+            
+            let deck = [];
+            for(let i=0; i<total/2; i++) { deck.push(i+1, i+1); }
+            deck.sort(() => Math.random() - 0.5);
+
+            deck.forEach((val) => {
+                const card = document.createElement('div');
+                card.className = 'card hidden';
+                card.dataset.val = val;
+                card.onclick = () => flip(card);
+                grid.appendChild(card);
+            });
+        }
+
+        function flip(card) {
+            if (flipped.length < 2 && card.classList.contains('hidden')) {
+                card.classList.remove('hidden');
+                card.innerText = card.dataset.val;
+                flipped.push(card);
+            }
+            if (flipped.length === 2) {
+                setTimeout(checkMatch, 500);
+            }
+        }
+
+        function checkMatch() {
+            if (flipped[0].dataset.val === flipped[1].dataset.val) {
+                flipped = [];
+            } else {
+                flipped.forEach(c => { c.classList.add('hidden'); c.innerText = ''; });
+                flipped = [];
+            }
+        }
+    </script>
+</body>
+</html>
