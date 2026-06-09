@@ -10,11 +10,13 @@
         .controls { display: flex; justify-content: center; gap: 30px; margin-top: 15px; }
         .btn { width: 80px; height: 80px; background: #333; border: 3px solid #00adb5; border-radius: 50%; color: white; font-size: 30px; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 10px #00adb5; -webkit-user-select: none; }
         .btn:active { background: #00adb5; transform: scale(0.9); }
+        #hint { font-size: 14px; color: #aaa; margin-top: 5px; height: 15px; }
     </style>
 </head>
 <body>
     <div id="hud">امتیاز شما: <span id="score">0</span> | رکورد: <span id="highscore">0</span></div>
     <canvas id="gameCanvas" width="360" height="400"></canvas>
+    <div id="hint">برای شلیک توپ و شروع، دکمه‌های جهت را بزنید</div>
 
     <div class="controls">
         <div class="btn" id="leftBtn">◀️</div>
@@ -24,27 +26,34 @@
     <script>
         const canvas = document.getElementById("gameCanvas"); const ctx = canvas.getContext("2d");
         const scoreElement = document.getElementById("score"); const highscoreElement = document.getElementById("highscore");
+        const hintElement = document.getElementById("hint");
 
-        let score = 0; let gameOver = false;
+        let score = 0; let gameOver = false; let gameStarted = false;
         let highscore = localStorage.getItem("break_highscore") || 0; highscoreElement.innerText = highscore;
 
-        const paddle = { w: 70, h: 12, x: 145, y: 370, speed: 6 };
-        const ball = { x: 180, y: 250, radius: 7, dx: 3, dy: -3 };
+        const paddle = { w: 75, h: 12, x: 142, y: 370, speed: 5.5 };
+        const ball = { x: 180, y: 358, radius: 7, dx: 2.8, dy: -2.8 };
 
         const brickRows = 4; const brickCols = 5; const brickW = 60; const brickH = 15; const brickPadding = 7; const brickOffsetTop = 30; const brickOffsetLeft = 15;
         let bricks = [];
         for(let c=0; c<brickCols; c++) { bricks[c] = []; for(let r=0; r<brickRows; r++) { bricks[c][r] = { x: 0, y: 0, status: 1 }; } }
 
         let moveLeft = false; let moveRight = false;
-        document.getElementById("leftBtn").addEventListener("touchstart", (e) => { e.preventDefault(); moveLeft = true; });
+
+        function startEvent() { if(!gameStarted) { gameStarted = true; hintElement.style.opacity = "0"; } }
+
+        document.getElementById("leftBtn").addEventListener("touchstart", (e) => { e.preventDefault(); startEvent(); moveLeft = true; });
         document.getElementById("leftBtn").addEventListener("touchend", () => moveLeft = false);
-        document.getElementById("rightBtn").addEventListener("touchstart", (e) => { e.preventDefault(); moveRight = true; });
+        document.getElementById("rightBtn").addEventListener("touchstart", (e) => { e.preventDefault(); startEvent(); moveRight = true; });
         document.getElementById("rightBtn").addEventListener("touchend", () => moveRight = false);
 
         function update() {
             if (gameOver) return;
+            
             if (moveLeft && paddle.x > 0) paddle.x -= paddle.speed;
             if (moveRight && paddle.x < canvas.width - paddle.w) paddle.x += paddle.speed;
+
+            if (!gameStarted) { ball.x = paddle.x + paddle.w/2; return; }
 
             ball.x += ball.dx; ball.y += ball.dy;
             if(ball.x + ball.radius > canvas.width || ball.x - ball.radius < 0) ball.dx = -ball.dx;
@@ -64,7 +73,7 @@
                     if(b.status == 1) {
                         if(ball.x > b.x && ball.x < b.x+brickW && ball.y > b.y && ball.y < b.y+brickH) {
                             ball.dy = -ball.dy; b.status = 0; score++; scoreElement.innerText = score;
-                            if(score === brickRows * brickCols) { alert("🏆 تبریک! شما کل آجرها رو شکوندید!"); document.location.reload(); }
+                            if(score === brickRows * brickCols) { alert("🏆 تبریک! کل آجرها رو شکوندید!"); document.location.reload(); }
                         }
                     }
                 }
