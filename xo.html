@@ -15,7 +15,7 @@
 </head>
 <body>
     <div id="hud">برد متوالی شما: <span id="score">0</span> | رکورد: <span id="highscore">0</span></div>
-    <div id="status" style="font-size: 16px; height: 20px;">نوبت شما (X)</div>
+    <div id="status" style="font-size: 16px; height: 20px; color:#aaa;">برای شروع، روی یکی از خانه‌ها کلیک کنید</div>
     
     <div class="board" id="board">
         <div class="cell" data-index="0"></div>
@@ -38,32 +38,28 @@
         const highscoreElement = document.getElementById('highscore');
         
         let board = ["", "", "", "", "", "", "", "", ""];
-        let gameActive = true;
-        let score = 0;
-        let highscore = localStorage.getItem("xo_highscore") || 0;
+        let gameActive = true; let firstMove = true;
+        let score = 0; let highscore = localStorage.getItem("xo_highscore") || 0;
         highscoreElement.innerText = highscore;
 
         const winPatterns = [[0,1,2], [3,4,5], [6,7,8], [0,3,6], [1,4,7], [2,5,8], [0,4,8], [2,4,6]];
-
         cells.forEach(cell => cell.addEventListener('click', handleCellClick));
 
         function handleCellClick(e) {
             const index = e.target.getAttribute('data-index');
             if (board[index] !== "" || !gameActive) return;
 
+            if (firstMove) { firstMove = false; statusText.style.color = "#white"; }
+
             makeMove(index, "X");
             if (checkWin("X")) {
-                score++;
-                scoreElement.innerText = score;
+                score++; scoreElement.innerText = score;
                 if(score > highscore) { highscore = score; localStorage.setItem("xo_highscore", highscore); highscoreElement.innerText = highscore; }
-                statusText.innerText = "🎉 شما بردید!";
-                gameActive = false;
-                return;
+                statusText.innerText = "🎉 شما بردید!"; gameActive = false; return;
             }
             if (!board.includes("")) { statusText.innerText = "مساوی شد 🤝"; gameActive = false; return; }
 
-            statusText.innerText = "🤖 نوبت هوش مصنوعی...";
-            gameActive = false;
+            statusText.innerText = "🤖 نوبت هوش مصنوعی..."; gameActive = false;
             setTimeout(aiMove, 500);
         }
 
@@ -75,19 +71,15 @@
 
         function aiMove() {
             let move = findBestMove("O") ?? findBestMove("X") ?? board.map((v, i) => v === "" ? i : null).filter(v => v !== null)[0];
-            
             if (move !== undefined) {
                 makeMove(move, "O");
                 if (checkWin("O")) {
                     score = 0; scoreElement.innerText = score;
-                    statusText.innerText = "❌ هوش مصنوعی برنده شد!";
-                    gameActive = false;
-                    return;
+                    statusText.innerText = "❌ هوش مصنوعی برنده شد!"; gameActive = false; return;
                 }
                 if (!board.includes("")) { statusText.innerText = "مساوی شد 🤝"; gameActive = false; return; }
             }
-            gameActive = true;
-            statusText.innerText = "نوبت شما (X)";
+            gameActive = true; statusText.innerText = "نوبت شما (X)";
         }
 
         function findBestMove(player) {
@@ -99,14 +91,11 @@
             return null;
         }
 
-        function checkWin(player) {
-            return winPatterns.some(pattern => pattern.every(i => board[i] === player));
-        }
+        function checkWin(player) { return winPatterns.some(pattern => pattern.every(i => board[i] === player)); }
 
         function resetBoard() {
-            board = ["", "", "", "", "", "", "", "", ""];
-            gameActive = true;
-            statusText.innerText = "نوبت شما (X)";
+            board = ["", "", "", "", "", "", "", "", ""]; gameActive = true; firstMove = true;
+            statusText.innerText = "برای شروع، روی یکی از خانه‌ها کلیک کنید"; statusText.style.color = "#aaa";
             cells.forEach(cell => { cell.innerText = ""; cell.className = "cell"; });
         }
     </script>
