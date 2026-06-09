@@ -5,13 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Sholex Game Hub</title>
     <style>
-        body { margin: 0; padding: 20px; background: linear-gradient(135deg, #111, #222); color: white; font-family: sans-serif; text-align: center; }
-        h1 { font-size: 24px; margin-bottom: 20px; color: #00adb5; }
-        .grid-container { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; max-width: 500px; margin: 0 auto; }
-        .game-card { background: #333; border: 2px solid #444; border-radius: 15px; padding: 20px 10px; cursor: pointer; transition: 0.2s; }
+        body { margin: 0; padding: 15px; background: linear-gradient(135deg, #111, #222); color: white; font-family: sans-serif; text-align: center; }
+        h1 { font-size: 22px; margin-bottom: 15px; color: #00adb5; }
+        .grid-container { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; max-width: 500px; margin: 0 auto; }
+        .game-card { background: #252525; border: 2px solid #333; border-radius: 15px; padding: 15px 5px; cursor: pointer; transition: 0.2s; }
         .game-card:active { transform: scale(0.95); border-color: #00adb5; }
-        .game-icon { font-size: 40px; margin-bottom: 10px; }
-        .game-title { font-size: 16px; font-weight: bold; }
+        .game-icon { font-size: 35px; margin-bottom: 8px; }
+        .game-title { font-size: 14px; font-weight: bold; }
         .back-btn { position: fixed; top: 10px; right: 10px; background: #ff2e63; color: white; border: none; padding: 8px 15px; border-radius: 8px; font-weight: bold; display: none; z-index: 100; }
         iframe { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; border: none; background: #111; }
     </style>
@@ -19,15 +19,31 @@
 <body>
 
     <div id="main-menu">
-        <h1>🎮 هاب بازی اختصاصی شولکس</h1>
+        <h1>🎮 هاب بازی اختصاصی شولکس (نسخه ۶ بازیه)</h1>
         <div class="grid-container">
             <div class="game-card" onclick="openGame('dodge.html')">
                 <div class="game-icon">🤖</div>
-                <div class="game-title">ربات جاخالی (ارتقا یافته)</div>
+                <div class="game-title">ربات جاخالی</div>
             </div>
             <div class="game-card" onclick="openGame('snake.html')">
                 <div class="game-icon">🐍</div>
                 <div class="game-title">مار بازی کلاسیک</div>
+            </div>
+            <div class="game-card" onclick="openGame('xo.html')">
+                <div class="game-icon">❌</div>
+                <div class="game-title">دوز هوشمند (XO)</div>
+            </div>
+            <div class="game-card" onclick="openGame('flappy.html')">
+                <div class="game-icon">🐦</div>
+                <div class="game-title">پرنده پرشی</div>
+            </div>
+            <div class="game-card" onclick="openGame('dino.html')">
+                <div class="game-icon">🦖</div>
+                <div class="game-title">دایناسور کروم</div>
+            </div>
+            <div class="game-card" onclick="openGame('breakout.html')">
+                <div class="game-icon">🧱</div>
+                <div class="game-title">آجرشکن نئونی</div>
             </div>
         </div>
     </div>
