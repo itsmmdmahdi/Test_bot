@@ -1,4 +1,3 @@
-slides:دوز ۳تایی جابجایی:xo.html
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
@@ -7,228 +6,36 @@ slides:دوز ۳تایی جابجایی:xo.html
     <style>
         body { background: #111; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; font-family: sans-serif; margin: 0; }
         .board { display: grid; grid-template-columns: repeat(3, 90px); gap: 10px; }
-        .cell { width: 90px; height: 90px; background: #222; border: 2px solid #333; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 45px; cursor: pointer; transition: 0.2s; }
-        .x { color: #ff2e63; text-shadow: 0 0 10px #ff2e63; }
-        .o { color: #4ecca3; text-shadow: 0 0 10px #4ecca3; }
-        .selected { border-color: #00adb5; background: #2a2a2a; transform: scale(0.95); }
-        #status { margin-bottom: 20px; font-size: 20px; color: #00adb5; }
+        .cell { width: 90px; height: 90px; background: #222; border: 2px solid #333; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 45px; cursor: pointer; }
+        .x { color: #ff2e63; } .o { color: #4ecca3; }
+        .selected { border: 2px solid #00adb5; }
     </style>
 </head>
 <body>
-    <div id="status">نوبت شما: مهره را بگذارید</div>
+    <div id="status">مهره‌گذاری کنید (۳ مهره)</div>
     <div class="board" id="board"></div>
-
     <script>
-        let board = Array(9).fill(null);
-        let countX = 0, countO = 0;
-        let selectedIndex = null;
-        let isPlayerTurn = true;
+        let board = Array(9).fill(null), countX = 0, countO = 0, selectedIndex = null, isPlayerTurn = true;
         const wins = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
-
         function render() {
-            const boardEl = document.getElementById('board');
-            boardEl.innerHTML = '';
-            board.forEach((val, i) => {
-                const cell = document.createElement('div');
-                cell.className = 'cell' + (selectedIndex === i ? ' selected' : '');
-                cell.innerHTML = val ? `<span class="${val.toLowerCase()}">${val}</span>` : '';
-                cell.onclick = () => handleMove(i);
-                boardEl.appendChild(cell);
-            });
+            const boardEl = document.getElementById('board'); boardEl.innerHTML = '';
+            board.forEach((val, i) => { const cell = document.createElement('div'); cell.className = 'cell' + (selectedIndex === i ? ' selected' : ''); cell.innerHTML = val ? `<span class="${val.toLowerCase()}">${val}</span>` : ''; cell.onclick = () => handleMove(i); boardEl.appendChild(cell); });
         }
-
         function handleMove(i) {
             if (!isPlayerTurn) return;
-
-            if (countX < 3) {
-                if (!board[i]) {
-                    board[i] = 'X';
-                    countX++;
-                    checkAndNext();
-                }
-            } else {
-                if (board[i] === 'X') {
-                    selectedIndex = i;
-                } else if (selectedIndex !== null && !board[i]) {
-                    board[selectedIndex] = null;
-                    board[i] = 'X';
-                    selectedIndex = null;
-                    checkAndNext();
-                }
-            }
+            if (countX < 3) { if (!board[i]) { board[i] = 'X'; countX++; checkAndNext(); } }
+            else { if (board[i] === 'X') selectedIndex = i; else if (selectedIndex !== null && !board[i]) { board[selectedIndex] = null; board[i] = 'X'; selectedIndex = null; checkAndNext(); } }
             render();
         }
-
-        function checkAndNext() {
-            if (checkWin('X')) return;
-            isPlayerTurn = false;
-            document.getElementById('status').innerText = "بات در حال فکر کردن...";
-            setTimeout(aiMove, 800);
-        }
-
+        function checkAndNext() { if (checkWin('X')) return; isPlayerTurn = false; setTimeout(aiMove, 800); }
         function aiMove() {
-            let bestMove;
-            if (countO < 3) {
-                bestMove = getBestPlace('O');
-                board[bestMove] = 'O';
-                countO++;
-            } else {
-                // هوش مصنوعی برای جابجایی
-                let oPos = board.map((v, i) => v === 'O' ? i : null).filter(v => v !== null);
-                let bestFrom, bestTo;
-                
-                // شبیه‌سازی جابجایی برای پیدا کردن بهترین حرکت
-                outer: for(let from of oPos) {
-                    for(let to = 0; to < 9; to++) {
-                        if(!board[to]) {
-                            board[from] = null; board[to] = 'O';
-                            if(isWinning('O')) { bestFrom = from; bestTo = to; break outer; }
-                            board[to] = null; board[from] = 'O';
-                        }
-                    }
-                }
-
-                if(bestFrom === undefined) {
-                    bestFrom = oPos[Math.floor(Math.random() * oPos.length)];
-                    let empty = board.map((v, i) => v === null ? i : null).filter(v => v !== null);
-                    bestTo = empty[Math.floor(Math.random() * empty.length)];
-                }
-                board[bestFrom] = null;
-                board[bestTo] = 'O';
-            }
-            
-            render();
-            if (!checkWin('O')) {
-                isPlayerTurn = true;
-                document.getElementById('status').innerText = countX < 3 ? "مهره را بگذارید" : "مهره را جابجا کنید";
-            }
+            if (countO < 3) { let e = board.map((v,i)=>v===null?i:null).filter(v=>v!==null); board[e[0]] = 'O'; countO++; }
+            else { let oPos = board.map((v,i)=>v==='O'?i:null).filter(v=>v!==null); let e = board.map((v,i)=>v===null?i:null).filter(v=>v!==null); board[oPos[0]] = null; board[e[0]] = 'O'; }
+            render(); if (!checkWin('O')) isPlayerTurn = true;
         }
-
-        function getBestPlace(p) {
-            for(let i=0; i<9; i++) if(!board[i]) { board[i]=p; if(isWinning(p)) { board[i]=null; return i; } board[i]=null; }
-            let opp = p === 'O' ? 'X' : 'O';
-            for(let i=0; i<9; i++) if(!board[i]) { board[i]=opp; if(isWinning(opp)) { board[i]=null; return i; } board[i]=null; }
-            let empty = board.map((v, i) => v === null ? i : null).filter(v => v !== null);
-            return empty[Math.floor(Math.random() * empty.length)];
-        }
-
         function isWinning(p) { return wins.some(w => w.every(idx => board[idx] === p)); }
-        
-        function checkWin(p) {
-            if (isWinning(p)) {
-                alert(p === 'X' ? "آفرین! بردی." : "بات برنده شد!");
-                location.reload();
-                return true;
-            }
-            return false;
-        }
+        function checkWin(p) { if (isWinning(p)) { alert(p === 'X' ? "بردی!" : "باختی!"); location.reload(); return true; } return false; }
         render();
     </script>
 </body>
 </html>
-
-
----
-
-### ۲. فایل `advanced_xo.html` (دوز بی‌نهایت - کلاسیک ۹ خانه‌ای)
-در این بازی مهره‌ها جابجا نمی‌شوند؛ بلکه آنقدر مهره می‌گذارید تا صفحه پر شود یا کسی ۳ تایی شود. بات در اینجا بسیار هوشمند عمل می‌کند.
-
-```html
-slides:دوز بی‌نهایت:advanced_xo.html
-<!DOCTYPE html>
-<html lang="fa" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <title>دوز بی‌نهایت</title>
-    <style>
-        body { background: #111; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; font-family: sans-serif; margin: 0; }
-        .board { display: grid; grid-template-columns: repeat(3, 90px); gap: 10px; }
-        .cell { width: 90px; height: 90px; background: #222; border: 2px solid #333; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 45px; cursor: pointer; }
-        .x { color: #00d2ff; text-shadow: 0 0 10px #00d2ff; }
-        .o { color: #f39c12; text-shadow: 0 0 10px #f39c12; }
-        #status { margin-bottom: 20px; font-size: 22px; font-weight: bold; }
-    </style>
-</head>
-<body>
-    <div id="status">دوز بی‌نهایت (کلاسیک)</div>
-    <div class="board" id="board"></div>
-
-    <script>
-        let board = Array(9).fill(null);
-        let isPlayerTurn = true;
-        const wins = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
-
-        function render() {
-            const boardEl = document.getElementById('board');
-            boardEl.innerHTML = '';
-            board.forEach((val, i) => {
-                const cell = document.createElement('div');
-                cell.className = 'cell';
-                cell.innerHTML = val ? `<span class="${val.toLowerCase()}">${val}</span>` : '';
-                cell.onclick = () => play(i);
-                boardEl.appendChild(cell);
-            });
-        }
-
-        function play(i) {
-            if (isPlayerTurn && !board[i]) {
-                board[i] = 'X';
-                render();
-                if (!checkEnd('X')) {
-                    isPlayerTurn = false;
-                    setTimeout(aiMove, 600);
-                }
-            }
-        }
-
-        function aiMove() {
-            // هوش مصنوعی تهاجمی/تدافعی
-            let move = findBestMove('O') || findBestMove('X') || randomMove();
-            if (move !== null) {
-                board[move] = 'O';
-                render();
-                if (!checkEnd('O')) isPlayerTurn = true;
-            }
-        }
-
-        function findBestMove(p) {
-            for (let i = 0; i < 9; i++) {
-                if (!board[i]) {
-                    board[i] = p;
-                    if (isWinning(p)) { board[i] = null; return i; }
-                    board[i] = null;
-                }
-            }
-            return null;
-        }
-
-        function randomMove() {
-            let empty = board.map((v, i) => v === null ? i : null).filter(v => v !== null);
-            return empty.length > 0 ? empty[Math.floor(Math.random() * empty.length)] : null;
-        }
-
-        function isWinning(p) { return wins.some(w => w.every(idx => board[idx] === p)); }
-
-        function checkEnd(p) {
-            if (isWinning(p)) {
-                alert(p === 'X' ? "شما پیروز شدید!" : "بات برنده شد!");
-                location.reload(); return true;
-            }
-            if (!board.includes(null)) {
-                alert("بازی مساوی شد!");
-                location.reload(); return true;
-            }
-            return false;
-        }
-        render();
-    </script>
-</body>
-</html>
-
-
-### خلاصه تغییرات:
-1.  **فایل `xo.html`**: دقیقاً همان دوز ۳تایی است که بعد از ۳ مهره، قابلیت جابجایی دارد (بسیار استراتژیک).
-2.  **فایل `advanced_xo.html`**: دوز کلاسیک است که تا پر شدن کامل صفحه ادامه دارد (بی‌نهایت مهره‌گذاری تا ۹ خانه).
-3.  **هوش مصنوعی**: هر دو بات اکنون اولویت را به **بردن خودشان** و دوم به **بستن راه شما** می‌دهند.
-
-حالا هاب شما کامل و حرفه‌ای است! هر دو بازی را تست کنید، بات‌ها الان بسیار باهوش‌تر عمل می‌کنند.
