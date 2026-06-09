@@ -2,7 +2,7 @@
 <html lang="fa" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>دوز بی‌نهایت</title>
+    <title>دوز بی‌نهایت (شکست‌ناپذیر)</title>
     <style>
         body { background: #111; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; font-family: sans-serif; }
         .board { display: grid; grid-template-columns: repeat(3, 90px); gap: 10px; }
@@ -12,16 +12,57 @@
 <body>
     <div class="board" id="board"></div>
     <script>
-        let board = Array(9).fill(null), isPlayerTurn = true;
-        const wins = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
-        function play(i) { if (isPlayerTurn && !board[i]) { board[i] = 'X'; render(); if(!checkEnd('X')) { isPlayerTurn = false; setTimeout(aiMove, 600); } } }
-        function aiMove() { 
-            let move = findBest('O') || findBest('X') || board.map((v,i)=>v===null?i:null).filter(v=>v!==null)[0];
-            if(move !== undefined) { board[move] = 'O'; render(); checkEnd('O'); isPlayerTurn = true; }
+        let board = Array(9).fill(null);
+        function play(i) {
+            if (!board[i]) {
+                board[i] = 'X';
+                render();
+                if (!checkEnd('X')) {
+                    setTimeout(() => {
+                        let bestMove = getBestMove();
+                        board[bestMove] = 'O';
+                        render();
+                        checkEnd('O');
+                    }, 500);
+                }
+            }
         }
-        function findBest(p) { for(let i=0; i<9; i++) { if(!board[i]) { board[i]=p; if(wins.some(w=>w.every(idx=>board[idx]===p))) { board[i]=null; return i; } board[i]=null; } } return null; }
+        // الگوریتم Minimax (مغز متفکر شکست‌ناپذیر)
+        function minimax(board, depth, isMaximizing) {
+            if (checkWinner('O')) return 10 - depth;
+            if (checkWinner('X')) return depth - 10;
+            if (!board.includes(null)) return 0;
+            if (isMaximizing) {
+                let best = -Infinity;
+                for (let i = 0; i < 9; i++) {
+                    if (!board[i]) { board[i] = 'O'; best = Math.max(best, minimax(board, depth + 1, false)); board[i] = null; }
+                } return best;
+            } else {
+                let best = Infinity;
+                for (let i = 0; i < 9; i++) {
+                    if (!board[i]) { board[i] = 'X'; best = Math.min(best, minimax(board, depth + 1, true)); board[i] = null; }
+                } return best;
+            }
+        }
+        function getBestMove() {
+            let bestVal = -Infinity; let move = -1;
+            for (let i = 0; i < 9; i++) {
+                if (!board[i]) {
+                    board[i] = 'O'; let moveVal = minimax(board, 0, false); board[i] = null;
+                    if (moveVal > bestVal) { bestVal = moveVal; move = i; }
+                }
+            } return move;
+        }
+        function checkWinner(p) {
+            const wins = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+            return wins.some(w => w.every(idx => board[idx] === p));
+        }
+        function checkEnd(p) {
+            if (checkWinner(p)) { alert(p === 'X' ? 'شما بردید!' : 'ربات برد!'); location.reload(); return true; }
+            if (!board.includes(null)) { alert('مساوی!'); location.reload(); return true; }
+            return false;
+        }
         function render() { const b = document.getElementById('board'); b.innerHTML = ''; board.forEach((v, i) => { const c = document.createElement('div'); c.className='cell'; c.innerHTML = v ? v : ''; c.onclick=()=>play(i); b.appendChild(c); }); }
-        function checkEnd(p) { if(wins.some(w=>w.every(idx=>board[idx]===p))) { alert(p==='X'?'بردی':'باختی'); location.reload(); return true; } if(!board.includes(null)) { alert('مساوی'); location.reload(); return true; } return false; }
         render();
     </script>
 </body>
