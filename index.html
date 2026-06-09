@@ -1,111 +1,58 @@
 <!DOCTYPE html>
-<html lang="fa">
+<html lang="fa" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Dodge Hero</title>
+    <title>Sholex Game Hub</title>
     <style>
-        body { margin: 0; background: #111; color: white; font-family: sans-serif; text-align: center; overflow: hidden; touch-action: none; }
-        canvas { background: #222; display: block; margin: 0 auto; max-width: 100%; max-height: 100vh; }
-        #score { position: absolute; top: 10px; left: 10px; font-size: 20px; font-weight: bold; }
+        body { margin: 0; padding: 20px; background: linear-gradient(135deg, #111, #222); color: white; font-family: sans-serif; text-align: center; }
+        h1 { font-size: 24px; margin-bottom: 20px; color: #00adb5; }
+        .grid-container { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; max-width: 500px; margin: 0 auto; }
+        .game-card { background: #333; border: 2px solid #444; border-radius: 15px; padding: 20px 10px; cursor: pointer; transition: 0.2s; }
+        .game-card:active { transform: scale(0.95); border-color: #00adb5; }
+        .game-icon { font-size: 40px; margin-bottom: 10px; }
+        .game-title { font-size: 16px; font-weight: bold; }
+        .back-btn { position: fixed; top: 10px; right: 10px; background: #ff2e63; color: white; border: none; padding: 8px 15px; border-radius: 8px; font-weight: bold; display: none; z-index: 100; }
+        iframe { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; border: none; background: #111; }
     </style>
 </head>
 <body>
-    <div id="score">امتیاز: 0</div>
-    <canvas id="gameCanvas" width="640" height="360"></canvas>
+
+    <div id="main-menu">
+        <h1>🎮 هاب بازی اختصاصی شولکس</h1>
+        <div class="grid-container">
+            <div class="game-card" onclick="openGame('dodge.html')">
+                <div class="game-icon">🤖</div>
+                <div class="game-title">ربات جاخالی (ارتقا یافته)</div>
+            </div>
+            <div class="game-card" onclick="openGame('snake.html')">
+                <div class="game-icon">🐍</div>
+                <div class="game-title">مار بازی کلاسیک</div>
+            </div>
+        </div>
+    </div>
+
+    <button id="back-button" class="back-btn" onclick="closeGame()">🔙 خروج</button>
+    <iframe id="game-frame" src=""></iframe>
 
     <script>
-        const canvas = document.getElementById("gameCanvas");
-        const ctx = canvas.getContext("2d");
-        const scoreElement = document.getElementById("score");
+        const mainMenu = document.getElementById('main-menu');
+        const gameFrame = document.getElementById('game-frame');
+        const backButton = document.getElementById('back-button');
 
-        let score = 0;
-        let gameOver = false;
-
-        // بازیکن (ربات)
-        const player = { x: 50, y: 160, width: 30, height: 30, speed: 5 };
-        
-        // مانع‌ها
-        const obstacles = [];
-        let obstacleTimer = 0;
-
-        // کنترل لمسی و کیبورد
-        let keys = {};
-        window.addEventListener("keydown", e => keys[e.code] = true);
-        window.addEventListener("keyup", e => keys[e.code] = false);
-        
-        // کنترل لمسی روی تبلت
-        window.addEventListener("touchmove", e => {
-            const touchY = e.touches[0].clientY - canvas.offsetTop;
-            player.y = Math.max(0, Math.min(canvas.height - player.height, touchY - player.height/2));
-        });
-
-        function spawnObstacle() {
-            const size = Math.random() * 30 + 15;
-            obstacles.push({
-                x: canvas.width,
-                y: Math.random() * (canvas.height - size),
-                width: size,
-                height: size,
-                speed: Math.random() * 3 + 3 + (score / 10) // با افزایش امتیاز سریع‌تر میشن
-            });
+        function openGame(page) {
+            mainMenu.style.display = 'none';
+            gameFrame.src = page;
+            gameFrame.style.display = 'block';
+            backButton.style.display = 'block';
         }
 
-        function update() {
-            if (gameOver) return;
-
-            // حرکت بازیکن با کیبورد
-            if (keys["ArrowUp"] && player.y > 0) player.y -= player.speed;
-            if (keys["ArrowDown"] && player.y < canvas.height - player.height) player.y += player.speed;
-
-            // تولید مانع
-            obstacleTimer++;
-            if (obstacleTimer % 60 === 0) spawnObstacle();
-
-            // حرکت و برخورد مانع‌ها
-            for (let i = obstacles.length - 1; i >= 0; i--) {
-                obstacles[i].x -= obstacles[i].speed;
-
-                // بررسی برخورد (Collision)
-                if (player.x < obstacles[i].x + obstacles[i].width &&
-                    player.x + player.width > obstacles[i].x &&
-                    player.y < obstacles[i].y + obstacles[i].height &&
-                    player.y + player.height > obstacles[i].y) {
-                    gameOver = true;
-                    alert("باختی! امتیاز شما: " + score);
-                    document.location.reload();
-                }
-
-                // حذف مانع خارج شده و افزایش امتیاز
-                if (obstacles[i].x + obstacles[i].width < 0) {
-                    obstacles.splice(i, 1);
-                    score++;
-                    scoreElement.innerText = "امتیاز: " + score;
-                }
-            }
+        function closeGame() {
+            gameFrame.style.display = 'none';
+            gameFrame.src = "";
+            backButton.style.display = 'none';
+            mainMenu.style.display = 'block';
         }
-
-        function draw() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            // رسم بازیکن (مربع آبی - بعدا می‌تونی عکس بذاری)
-            ctx.fillStyle = "#00adb5";
-            ctx.fillRect(player.x, player.y, player.width, player.height);
-
-            // رسم مانع‌ها (مربع‌های قرمز)
-            ctx.fillStyle = "#ff2e63";
-            for (let obs of obstacles) {
-                ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
-            }
-        }
-
-        function gameLoop() {
-            update();
-            draw();
-            requestAnimationFrame(gameLoop);
-        }
-
-        gameLoop();
     </script>
 </body>
 </html>
