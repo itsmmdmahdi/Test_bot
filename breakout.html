@@ -31,8 +31,11 @@
         let score = 0; let gameOver = false; let gameStarted = false;
         let highscore = localStorage.getItem("break_highscore") || 0; highscoreElement.innerText = highscore;
 
-        const paddle = { w: 75, h: 12, x: 142, y: 370, speed: 5.5 };
-        const ball = { x: 180, y: 358, radius: 7, dx: 2.8, dy: -2.8 };
+        // افزایش سرعت حرکت پلتفرم برای نرمی بیشتر (از 5.5 به 7.5)
+        const paddle = { w: 80, h: 12, x: 140, y: 370, speed: 7.5 };
+        
+        // کاهش محسوس سرعت اولیه توپ برای کنترل راحت‌تر (از 2.8 به 1.9)
+        const ball = { x: 180, y: 358, radius: 7, dx: 1.9, dy: -1.9 };
 
         const brickRows = 4; const brickCols = 5; const brickW = 60; const brickH = 15; const brickPadding = 7; const brickOffsetTop = 30; const brickOffsetLeft = 15;
         let bricks = [];
@@ -42,10 +45,16 @@
 
         function startEvent() { if(!gameStarted) { gameStarted = true; hintElement.style.opacity = "0"; } }
 
+        // بهینه‌سازی رویدادهای لمسی برای حذف لگ تکان خوردن پلتفرم
         document.getElementById("leftBtn").addEventListener("touchstart", (e) => { e.preventDefault(); startEvent(); moveLeft = true; });
-        document.getElementById("leftBtn").addEventListener("touchend", () => moveLeft = false);
+        document.getElementById("leftBtn").addEventListener("touchend", (e) => { e.preventDefault(); moveLeft = false; });
         document.getElementById("rightBtn").addEventListener("touchstart", (e) => { e.preventDefault(); startEvent(); moveRight = true; });
-        document.getElementById("rightBtn").addEventListener("touchend", () => moveRight = false);
+        document.getElementById("rightBtn").addEventListener("touchend", (e) => { e.preventDefault(); moveRight = false; });
+
+        document.getElementById("leftBtn").addEventListener("mousedown", () => { startEvent(); moveLeft = true; });
+        document.getElementById("leftBtn").addEventListener("mouseup", () => moveLeft = false);
+        document.getElementById("rightBtn").addEventListener("mousedown", () => { startEvent(); moveRight = true; });
+        document.getElementById("rightBtn").addEventListener("mouseup", () => moveRight = false);
 
         function update() {
             if (gameOver) return;
@@ -59,7 +68,14 @@
             if(ball.x + ball.radius > canvas.width || ball.x - ball.radius < 0) ball.dx = -ball.dx;
             if(ball.y - ball.radius < 0) ball.dy = -ball.dy;
 
-            if(ball.y + ball.radius > paddle.y && ball.x > paddle.x && ball.x < paddle.x + paddle.w) { ball.dy = -ball.dy; ball.y = paddle.y - ball.radius; }
+            if(ball.y + ball.radius > paddle.y && ball.x > paddle.x && ball.x < paddle.x + paddle.w) { 
+                ball.dy = -ball.dy; 
+                ball.y = paddle.y - ball.radius; 
+                
+                // ایجاد کمی زاویه متغیر هنگام برخورد به گوشه‌های پلتفرم برای جذابیت بیشتر
+                let hitPoint = ball.x - (paddle.x + paddle.w/2);
+                ball.dx = hitPoint * 0.06;
+            }
             else if(ball.y + ball.radius > canvas.height) {
                 gameOver = true;
                 if (score > highscore) { localStorage.setItem("break_highscore", score); alert("🎉 رکورد جدید: " + score); }
@@ -73,7 +89,7 @@
                     if(b.status == 1) {
                         if(ball.x > b.x && ball.x < b.x+brickW && ball.y > b.y && ball.y < b.y+brickH) {
                             ball.dy = -ball.dy; b.status = 0; score++; scoreElement.innerText = score;
-                            if(score === brickRows * brickCols) { alert("🏆 تبریک! کل آجرها رو شکوندید!"); document.location.reload(); }
+                            if(score === brickRows * brickCols) { alert("🏆 تبریک! شما کل آجرها رو شکوندید!"); document.location.reload(); }
                         }
                     }
                 }
@@ -82,26 +98,22 @@
 
         function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = "#00adb5"; ctx.shadowBlur = 8; ctx.shadowColor = "#00adb5";
-            ctx.fillRect(paddle.x, paddle.y, paddle.w, paddle.h);
+            
+            // پلتفرم نئون باکیفیت
+            ctx.fillStyle = "#00adb5"; ctx.shadowBlur = 10; ctx.shadowColor = "#00adb5";
+            ctx.beginPath(); ctx.roundRect(paddle.x, paddle.y, paddle.w, paddle.h, 6); ctx.fill();
+            
+            // توپ
             ctx.fillStyle = "#fff"; ctx.shadowColor = "#fff";
             ctx.beginPath(); ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI*2); ctx.fill();
 
+            // آجرها
             ctx.fillStyle = "#ff2e63"; ctx.shadowColor = "#ff2e63";
             for(let c=0; c<brickCols; c++) {
                 for(let r=0; r<brickRows; r++) {
                     if(bricks[c][r].status == 1) {
                         let brickX = (c*(brickW+brickPadding))+brickOffsetLeft; let brickY = (r*(brickH+brickPadding))+brickOffsetTop;
                         bricks[c][r].x = brickX; bricks[c][r].y = brickY;
-                        ctx.fillRect(brickX, brickY, brickW, brickH);
+                        ctx.beginPath(); ctx.roundRect(brickX, brickY, brickW, brickH, 4); ctx.fill();
                     }
                 }
-            }
-            ctx.shadowBlur = 0;
-        }
-
-        function loop() { update(); draw(); requestAnimationFrame(loop); }
-        loop();
-    </script>
-</body>
-</html>
