@@ -19,23 +19,27 @@
 </head>
 <body>
     <header><h1>🎮 هاب شولکس</h1></header>
+    
     <div class="menu-section">
         <h2>👤 بازی‌های تکی</h2>
         <div class="grid">
             <div class="game-card" onclick="openGame('snake.html')"><div class="game-icon">🐍</div><div>مار بازی</div></div>
-            <div class="game-card" onclick="openGame('game2048.html')"><div class="game-icon">🔢</div><div>بازی ۲۰۴۸</div></div>
+            <div class="game-card" onclick="openGame('game2048.html')"><div class="game-icon">🔢</div><div>۲۰۴۸</div></div>
             <div class="game-card" onclick="openGame('breakout.html')"><div class="game-icon">🧱</div><div>آجرشکن</div></div>
             <div class="game-card" onclick="openGame('car_dodge.html')"><div class="game-icon">🏎️</div><div>کار داج</div></div>
         </div>
     </div>
+    
     <div class="menu-section">
         <h2>👥 بازی‌های دونفره</h2>
         <div class="grid">
             <div class="game-card" onclick="openGame('xo_multi.html')"><div class="game-icon">❌</div><div>دوز دونفره</div></div>
         </div>
     </div>
+
     <button id="backBtn" onclick="closeGame()">خروج از بازی</button>
     <iframe id="gameFrame"></iframe>
+
     <script>
         function openGame(url) {
             document.getElementById("gameFrame").src = url;
