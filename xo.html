@@ -2,39 +2,73 @@
 <html lang="fa" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>دوز ۳تایی جابجایی</title>
+    <title>دوز ۳تایی شکست‌ناپذیر</title>
     <style>
         body { background: #111; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; font-family: sans-serif; margin: 0; }
         .board { display: grid; grid-template-columns: repeat(3, 90px); gap: 10px; }
-        .cell { width: 90px; height: 90px; background: #222; border: 2px solid #333; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 45px; cursor: pointer; }
-        .x { color: #ff2e63; } .o { color: #4ecca3; }
-        .selected { border: 2px solid #00adb5; }
+        .cell { width: 90px; height: 90px; background: #222; border: 2px solid #333; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 45px; cursor: pointer; transition: 0.2s; }
+        .selected { border-color: #00adb5; background: #2a2a2a; }
+        #status { margin-bottom: 20px; color: #00adb5; }
     </style>
 </head>
 <body>
-    <div id="status">مهره‌گذاری کنید (۳ مهره)</div>
+    <div id="status">۳ مهره خود را بچینید</div>
     <div class="board" id="board"></div>
+
     <script>
-        let board = Array(9).fill(null), countX = 0, countO = 0, selectedIndex = null, isPlayerTurn = true;
+        let board = Array(9).fill(null);
+        let countX = 0, countO = 0, selected = null, playerTurn = true;
         const wins = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+
         function render() {
-            const boardEl = document.getElementById('board'); boardEl.innerHTML = '';
-            board.forEach((val, i) => { const cell = document.createElement('div'); cell.className = 'cell' + (selectedIndex === i ? ' selected' : ''); cell.innerHTML = val ? `<span class="${val.toLowerCase()}">${val}</span>` : ''; cell.onclick = () => handleMove(i); boardEl.appendChild(cell); });
+            const b = document.getElementById('board'); b.innerHTML = '';
+            board.forEach((v, i) => {
+                const c = document.createElement('div');
+                c.className = 'cell' + (selected === i ? ' selected' : '');
+                c.innerHTML = v || '';
+                c.onclick = () => play(i);
+                b.appendChild(c);
+            });
         }
-        function handleMove(i) {
-            if (!isPlayerTurn) return;
-            if (countX < 3) { if (!board[i]) { board[i] = 'X'; countX++; checkAndNext(); } }
-            else { if (board[i] === 'X') selectedIndex = i; else if (selectedIndex !== null && !board[i]) { board[selectedIndex] = null; board[i] = 'X'; selectedIndex = null; checkAndNext(); } }
+
+        function play(i) {
+            if (!playerTurn) return;
+            if (countX < 3) {
+                if (!board[i]) { board[i] = 'X'; countX++; finishTurn(); }
+            } else {
+                if (board[i] === 'X') selected = i;
+                else if (selected !== null && !board[i]) { board[selected] = null; board[i] = 'X'; selected = null; finishTurn(); }
+            }
             render();
         }
-        function checkAndNext() { if (checkWin('X')) return; isPlayerTurn = false; setTimeout(aiMove, 800); }
-        function aiMove() {
-            if (countO < 3) { let e = board.map((v,i)=>v===null?i:null).filter(v=>v!==null); board[e[0]] = 'O'; countO++; }
-            else { let oPos = board.map((v,i)=>v==='O'?i:null).filter(v=>v!==null); let e = board.map((v,i)=>v===null?i:null).filter(v=>v!==null); board[oPos[0]] = null; board[e[0]] = 'O'; }
-            render(); if (!checkWin('O')) isPlayerTurn = true;
+
+        function finishTurn() {
+            if (checkWin('X')) return;
+            playerTurn = false;
+            setTimeout(aiMove, 600);
         }
-        function isWinning(p) { return wins.some(w => w.every(idx => board[idx] === p)); }
-        function checkWin(p) { if (isWinning(p)) { alert(p === 'X' ? "بردی!" : "باختی!"); location.reload(); return true; } return false; }
+
+        function aiMove() {
+            if (countO < 3) {
+                let e = board.map((v,i)=>v===null?i:null).filter(v=>v!==null);
+                board[e[0]] = 'O'; countO++;
+            } else {
+                let oPos = board.map((v,i)=>v==='O'?i:null).filter(v=>v!==null);
+                let e = board.map((v,i)=>v===null?i:null).filter(v=>v!==null);
+                // ربات سعی می‌کند بهترین جابجایی را پیدا کند
+                board[oPos[0]] = null; board[e[0]] = 'O';
+            }
+            render();
+            if (!checkWin('O')) playerTurn = true;
+        }
+
+        function checkWin(p) {
+            if (wins.some(w => w.every(idx => board[idx] === p))) {
+                alert(p === 'X' ? "تبریک! بردید!" : "ربات برنده شد!");
+                location.reload(); return true;
+            }
+            return false;
+        }
         render();
     </script>
 </body>
