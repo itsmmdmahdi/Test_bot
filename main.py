@@ -29,7 +29,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if not await is_member(context.bot, user_id):
         keyboard = [
-            [InlineKeyboardButton("عضویت در گروه", url="https://t.me/your_group_link")],
+            [InlineKeyboardButton("عضویت در گروه", url="https://t.me/SHOLEX_TEL")],
             [InlineKeyboardButton("بررسی عضویت", callback_data="check")]
         ]
         await update.message.reply_text(
