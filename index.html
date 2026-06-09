@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Dodge Hero</title>
+    <style>
+        body { margin: 0; background: #111; color: white; font-family: sans-serif; text-align: center; overflow: hidden; touch-action: none; }
+        canvas { background: #222; display: block; margin: 0 auto; max-width: 100%; max-height: 100vh; }
+        #score { position: absolute; top: 10px; left: 10px; font-size: 20px; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div id="score">امتیاز: 0</div>
+    <canvas id="gameCanvas" width="640" height="360"></canvas>
+
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+        const scoreElement = document.getElementById("score");
+
+        let score = 0;
+        let gameOver = false;
+
+        // بازیکن (ربات)
+        const player = { x: 50, y: 160, width: 30, height: 30, speed: 5 };
+        
+        // مانع‌ها
+        const obstacles = [];
+        let obstacleTimer = 0;
+
+        // کنترل لمسی و کیبورد
+        let keys = {};
+        window.addEventListener("keydown", e => keys[e.code] = true);
+        window.addEventListener("keyup", e => keys[e.code] = false);
+        
+        // کنترل لمسی روی تبلت
+        window.addEventListener("touchmove", e => {
+            const touchY = e.touches[0].clientY - canvas.offsetTop;
+            player.y = Math.max(0, Math.min(canvas.height - player.height, touchY - player.height/2));
+        });
+
+        function spawnObstacle() {
+            const size = Math.random() * 30 + 15;
+            obstacles.push({
+                x: canvas.width,
+                y: Math.random() * (canvas.height - size),
+                width: size,
+                height: size,
+                speed: Math.random() * 3 + 3 + (score / 10) // با افزایش امتیاز سریع‌تر میشن
+            });
+        }
+
+        function update() {
+            if (gameOver) return;
+
+            // حرکت بازیکن با کیبورد
+            if (keys["ArrowUp"] && player.y > 0) player.y -= player.speed;
+            if (keys["ArrowDown"] && player.y < canvas.height - player.height) player.y += player.speed;
+
+            // تولید مانع
+            obstacleTimer++;
+            if (obstacleTimer % 60 === 0) spawnObstacle();
+
+            // حرکت و برخورد مانع‌ها
+            for (let i = obstacles.length - 1; i >= 0; i--) {
+                obstacles[i].x -= obstacles[i].speed;
+
+                // بررسی برخورد (Collision)
+                if (player.x < obstacles[i].x + obstacles[i].width &&
+                    player.x + player.width > obstacles[i].x &&
+                    player.y < obstacles[i].y + obstacles[i].height &&
+                    player.y + player.height > obstacles[i].y) {
+                    gameOver = true;
+                    alert("باختی! امتیاز شما: " + score);
+                    document.location.reload();
+                }
+
+                // حذف مانع خارج شده و افزایش امتیاز
+                if (obstacles[i].x + obstacles[i].width < 0) {
+                    obstacles.splice(i, 1);
+                    score++;
+                    scoreElement.innerText = "امتیاز: " + score;
+                }
+            }
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // رسم بازیکن (مربع آبی - بعدا می‌تونی عکس بذاری)
+            ctx.fillStyle = "#00adb5";
+            ctx.fillRect(player.x, player.y, player.width, player.height);
+
+            // رسم مانع‌ها (مربع‌های قرمز)
+            ctx.fillStyle = "#ff2e63";
+            for (let obs of obstacles) {
+                ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
+            }
+        }
+
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        gameLoop();
+    </script>
+</body>
+</html>
