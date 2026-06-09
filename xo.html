@@ -2,67 +2,92 @@
 <html lang="fa" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>دوز هوشمند</title>
+    <title>دوز پیشرفته هوشمند</title>
     <style>
         body { background: #111; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; font-family: sans-serif; }
         .board { display: grid; grid-template-columns: repeat(3, 80px); gap: 10px; }
         .cell { width: 80px; height: 80px; background: #222; border: 2px solid #333; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 40px; cursor: pointer; }
         .x { color: #ff2e63; } .o { color: #4ecca3; }
+        .selected { border: 2px solid #00adb5; }
     </style>
 </head>
 <body>
     <div class="board" id="board"></div>
+    <div id="status" style="margin-top:20px;">نوبت: شما (X)</div>
 
     <script>
         let board = Array(9).fill(null);
-        let player = 'X';
-        const boardEl = document.getElementById('board');
+        let countX = 0, countO = 0;
+        let selected = null;
+        let isPlayerTurn = true; // کنترل نوبت
 
         function render() {
+            const boardEl = document.getElementById('board');
             boardEl.innerHTML = '';
             board.forEach((val, i) => {
                 const cell = document.createElement('div');
-                cell.className = 'cell';
+                cell.className = 'cell' + (selected === i ? ' selected' : '');
                 cell.innerHTML = val ? `<span class="${val.toLowerCase()}">${val}</span>` : '';
-                cell.onclick = () => playPlayer(i);
+                cell.onclick = () => handleCell(i);
                 boardEl.appendChild(cell);
             });
         }
 
-        function playPlayer(i) {
-            if (!board[i] && player === 'X') {
-                board[i] = 'X';
+        function handleCell(i) {
+            if (!isPlayerTurn) return; // اگر نوبت ربات است، کلیک نکن
+
+            // مرحله اول: گذاشتن مهره
+            if (countX < 3) {
+                if (!board[i]) {
+                    board[i] = 'X';
+                    countX++;
+                    finishTurn();
+                }
+            } 
+            // مرحله دوم: حرکت دادن (Slide)
+            else {
+                if (selected === null && board[i] === 'X') selected = i;
+                else if (selected !== null && !board[i]) {
+                    board[i] = 'X';
+                    board[selected] = null;
+                    selected = null;
+                    finishTurn();
+                }
+            }
+            render();
+        }
+
+        function finishTurn() {
+            if (checkWinner('X')) return;
+            isPlayerTurn = false;
+            document.getElementById('status').innerText = "ربات در حال فکر کردن...";
+            setTimeout(aiMove, 800);
+        }
+
+        function aiMove() {
+            // منطق هوش مصنوعی (ساده: حرکت در خانه خالی)
+            let empty = board.map((v, i) => v === null ? i : null).filter(v => v !== null);
+            if (empty.length > 0) {
+                let move = empty[Math.floor(Math.random() * empty.length)];
+                board[move] = 'O';
+                if(countO < 3) countO++;
                 render();
-                if (!checkWinner()) {
-                    player = 'O';
-                    setTimeout(playAI, 500); // تاخیر نیم ثانیه‌ای برای حس واقعی‌تر
+                if (!checkWinner('O')) {
+                    isPlayerTurn = true;
+                    document.getElementById('status').innerText = "نوبت: شما (X)";
                 }
             }
         }
 
-        function playAI() {
-            let emptyCells = board.map((val, i) => val === null ? i : null).filter(val => val !== null);
-            if (emptyCells.length > 0) {
-                let move = emptyCells[Math.floor(Math.random() * emptyCells.length)];
-                board[move] = 'O';
-                render();
-                checkWinner();
-                player = 'X';
-            }
-        }
-
-        function checkWinner() {
+        function checkWinner(p) {
             const wins = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
             for(let w of wins) {
-                if(board[w[0]] && board[w[0]] === board[w[1]] && board[w[0]] === board[w[2]]) {
-                    alert('برنده: ' + board[w[0]]); location.reload(); return true;
+                if(board[w[0]] === p && board[w[1]] === p && board[w[2]] === p) {
+                    alert('برنده: ' + p); location.reload(); return true;
                 }
             }
-            if(!board.includes(null)) { alert('مساوی!'); location.reload(); return true; }
             return false;
         }
-
         render();
     </script>
 </body>
