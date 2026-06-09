@@ -5,82 +5,61 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SHOLEX Hub</title>
     <style>
-        body {
-            margin: 0;
-            background: radial-gradient(circle, #2d1b4d 0%, #111 80%);
-            color: white;
-            font-family: sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-        }
+        body { margin: 0; background: radial-gradient(circle, #2d1b4d 0%, #111 80%); color: white; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; overflow: hidden; }
+        
+        /* بخش صفحه اصلی */
+        #main-menu { display: flex; flex-direction: column; align-items: center; }
+        .neon-text { font-size: 80px; font-weight: bold; color: #fff; text-shadow: 0 0 10px #ff00ff, 0 0 20px #ff00ff, 0 0 40px #ff00ff; margin-bottom: 50px; }
+        
+        /* دکمه ورود (آبی مات) */
+        .enter-btn { background: #005f73; color: white; padding: 20px 60px; border: none; border-radius: 5px; font-size: 20px; cursor: pointer; transition: 0.3s; box-shadow: 0 0 15px #005f73; }
+        .enter-btn:hover { background: #0a9396; }
 
-        /* تایتل نئونی */
-        .title-container {
-            position: relative;
-            margin-bottom: 50px;
-        }
-        .neon-text {
-            font-size: 80px;
-            font-weight: bold;
-            color: #fff;
-            text-shadow: 0 0 10px #ff00ff, 0 0 20px #ff00ff, 0 0 40px #ff00ff;
-        }
-        .floral-halo {
-            position: absolute;
-            top: -50%; left: -50%;
-            width: 200%; height: 200%;
-            background: radial-gradient(circle, rgba(255,0,255,0.2) 0%, transparent 70%);
-            z-index: -1;
-        }
-
-        /* چیدمان ۲ در ۲ */
-        .game-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 20px;
-            width: 300px;
-        }
-        .game-card {
-            background: rgba(255, 255, 255, 0.05);
-            border: 2px solid #444;
-            padding: 30px;
-            border-radius: 15px;
-            text-align: center;
-            cursor: pointer;
-            transition: 0.3s;
-        }
+        /* بخش هاب (مخفی تا قبل ورود) */
+        #hub-content { display: none; flex-direction: column; align-items: center; }
+        .game-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; width: 300px; }
+        .game-card { background: rgba(255, 255, 255, 0.05); border: 2px solid #444; padding: 30px; border-radius: 15px; text-align: center; cursor: pointer; transition: 0.3s; }
         .game-card:hover { border-color: #ff00ff; transform: scale(1.05); }
 
-        /* دکمه بازگشت */
-        .back-btn {
-            margin-top: 50px;
-            background: #8b0000; /* قرمز مات */
-            color: white;
-            padding: 15px 40px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
+        /* بازی‌ها */
+        #gameFrame { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; border: none; z-index: 100; background: #111; }
+        .back-btn { position: fixed; bottom: 30px; z-index: 101; background: #8b0000; color: white; padding: 15px 40px; border: none; border-radius: 5px; cursor: pointer; display: none; }
     </style>
 </head>
 <body>
 
-    <div class="title-container">
-        <div class="floral-halo"></div>
+    <div id="main-menu">
         <div class="neon-text">SHOLEX</div>
+        <button class="enter-btn" onclick="enterHub()">ورود به هاب</button>
     </div>
 
-    <div class="game-grid">
-        <div class="game-card">🐍<br>مار</div>
-        <div class="game-card">❌<br>دوز</div>
-        <div class="game-card">🧱<br>آجرشکن</div>
-        <div class="game-card">🔢<br>۲۰۴۸</div>
+    <div id="hub-content">
+        <div class="game-grid">
+            <div class="game-card" onclick="openGame('snake.html')">🐍<br>مار</div>
+            <div class="game-card" onclick="openGame('advanced_xo.html')">❌<br>دوز</div>
+            <div class="game-card" onclick="openGame('connect4.html')">🧱<br>آجرشکن</div>
+            <div class="game-card" onclick="openGame('memory.html')">🧠<br>حافظه</div>
+        </div>
     </div>
 
-    <button class="back-button back-btn">بازگشت</button>
+    <button id="backBtn" class="back-btn" onclick="closeGame()">بازگشت</button>
+    <iframe id="gameFrame"></iframe>
 
+    <script>
+        function enterHub() {
+            document.getElementById('main-menu').style.display = 'none';
+            document.getElementById('hub-content').style.display = 'flex';
+        }
+        function openGame(url) {
+            document.getElementById('gameFrame').src = url;
+            document.getElementById('gameFrame').style.display = 'block';
+            document.getElementById('backBtn').style.display = 'block';
+        }
+        function closeGame() {
+            document.getElementById('gameFrame').src = '';
+            document.getElementById('gameFrame').style.display = 'none';
+            document.getElementById('backBtn').style.display = 'none';
+        }
+    </script>
 </body>
 </html>
