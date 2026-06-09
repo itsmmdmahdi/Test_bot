@@ -1,242 +1,41 @@
-<!DOCTYPE html>
-<html lang="fa">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>پک‌من نئونی شولکس</title>
-    <style>
-        body { margin: 0; background: #111; color: white; font-family: sans-serif; text-align: center; overflow: hidden; user-select: none; }
-        #hud { display: flex; justify-content: space-around; font-size: 18px; font-weight: bold; margin-top: 10px; padding: 0 20px; color: #ffeb3b; }
-        canvas { background: #0c0c14; display: block; margin: 10px auto; max-width: 90%; max-height: 45vh; border: 3px solid #1e1e38; border-radius: 8px; }
-        .dpad { display: grid; grid-template-columns: repeat(3, 65px); grid-template-rows: repeat(3, 65px); gap: 8px; justify-content: center; margin-top: 10px; }
-        .dbtn { background: #1a1a2e; border: 2px solid #00adb5; color: white; font-size: 22px; font-weight: bold; display: flex; align-items: center; justify-content: center; border-radius: 50%; box-shadow: 0 0 10px rgba(0, 173, 181, 0.4); -webkit-user-select: none; }
-        .dbtn:active { background: #00adb5; transform: scale(0.9); box-shadow: 0 0 15px #00adb5; }
-        .empty { background: transparent; border: none; box-shadow: none; }
-        #hint { font-size: 13px; color: #888; margin-top: 2px; height: 15px; }
-    </style>
-</head>
-<body>
-    <div id="hud">
-        <div>امتیاز: <span id="score">0</span></div>
-        <div style="color: #00adb5;">رکورد: <span id="highscore">0</span></div>
-    </div>
+// جایگزین بخش مدیریت منطق روح‌ها در تابع update
+for(let g of ghosts) {
+    // روح‌ها حالا در هر لحظه، جهت‌هایی که آن‌ها را به پک‌من نزدیک‌تر می‌کند اولویت می‌دهند
+    let dirs = [{dx: g.speed, dy: 0}, {dx: -g.speed, dy: 0}, {dx: 0, dy: g.speed}, {dx: 0, dy: -g.speed}];
     
-    <canvas id="pacmanCanvas" width="340" height="340"></canvas>
-    <div id="hint">برای شروع فرار از روح‌ها، یک جهت را لمس کنید!</div>
-
-    <div class="dpad">
-        <div class="empty"></div>
-        <div class="dbtn" id="up">🔼</div>
-        <div class="empty"></div>
-        <div class="dbtn" id="left">◀️</div>
-        <div class="empty" style="background:#222; border-radius:50%; width:30px; height:30px; margin:auto;"></div>
-        <div class="dbtn" id="right">▶️</div>
-        <div class="empty"></div>
-        <div class="dbtn" id="down">🔽</div>
-        <div class="empty"></div>
-    </div>
-
-    <script>
-        const canvas = document.getElementById("pacmanCanvas");
-        const ctx = canvas.getContext("2d");
-        const scoreElement = document.getElementById("score");
-        const highscoreElement = document.getElementById("highscore");
-        const hintElement = document.getElementById("hint");
-
-        let score = 0; let gameOver = false; let gameStarted = false;
-        let highscore = localStorage.getItem("pacman_highscore") || 0;
-        highscoreElement.innerText = highscore;
-
-        // سیستم تولید صدای اختصاصی
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        function playSound(type) {
-            if (audioCtx.state === 'suspended') audioCtx.resume();
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-
-            if (type === 'dot') {
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(600, audioCtx.currentTime);
-                gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.08);
-                osc.start(); osc.stop(audioCtx.currentTime + 0.08);
-            } else if (type === 'lose') {
-                osc.type = 'sawtooth';
-                osc.frequency.setValueAtTime(300, audioCtx.currentTime);
-                osc.frequency.linearRampToValueAtTime(80, audioCtx.currentTime + 0.5);
-                gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
-                osc.start(); osc.stop(audioCtx.currentTime + 0.5);
-            }
-        }
-
-        const tileSize = 20;
-        const map = [
-            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-            [1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,1],
-            [1,0,1,1,0,1,0,1,0,1,0,1,1,1,1,0,1],
-            [1,0,1,1,0,1,0,0,0,1,0,0,0,1,1,0,1],
-            [1,0,0,0,0,1,1,1,1,1,1,1,0,0,0,0,1],
-            [1,1,1,0,0,0,0,0,0,0,0,0,0,0,1,1,1],
-            [1,0,0,0,1,1,0,1,1,1,0,1,1,0,0,0,1],
-            [1,0,1,0,1,1,0,1,1,1,0,1,1,0,1,0,1],
-            [1,0,1,0,0,0,0,0,1,0,0,0,0,0,1,0,1],
-            [1,0,1,1,1,1,0,1,1,1,0,1,1,1,1,0,1],
-            [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-            [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
-        ];
-
-        let dots = [];
-        for(let r=0; r<map.length; r++) {
-            for(let c=0; c<map[r].length; c++) {
-                if(map[r][c] === 0) dots.push({r: r, c: c, active: true});
-            }
-        }
-
-        let pacman = { x: 1 * tileSize + tileSize/2, y: 1 * tileSize + tileSize/2, nextDx: 0, nextDy: 0, dx: 0, dy: 0, speed: 1.25, angle: 0.2 };
+    // فیلتر کردن مسیرهای مسدود
+    let validDirs = dirs.filter(d => !isCollidingWithWall(g.x + d.dx, g.y + d.dy));
+    
+    // هوش مصنوعی تهاجمی: همیشه بهترین جهت برای کاهش فاصله تا پک‌من را انتخاب کن
+    if(validDirs.length > 0) {
+        let bestDir = validDirs[0];
+        let minDist = Infinity;
         
-        let ghosts = [
-            { x: 8*tileSize+tileSize/2, y: 5*tileSize+tileSize/2, color: "#ff0000", dx: 1.25, dy: 0, speed: 1.25, type: "chaser" },
-            { x: 2*tileSize+tileSize/2, y: 8*tileSize+tileSize/2, color: "#ffb8ff", dx: 0, dy: -1.25, speed: 1.25, type: "random" },
-            { x: 14*tileSize+tileSize/2, y: 8*tileSize+tileSize/2, color: "#00ffff", dx: -1.25, dy: 0, speed: 1.25, type: "random" }
-        ];
-
-        function startEvent() { if(!gameStarted) { gameStarted = true; hintElement.style.opacity = "0"; if(audioCtx.state === 'suspended') audioCtx.resume(); } }
-
-        function setDirection(dir) {
-            startEvent();
-            if (dir === 'up')    { pacman.nextDx = 0;  pacman.nextDy = -pacman.speed; }
-            if (dir === 'down')  { pacman.nextDx = 0;  pacman.nextDy = pacman.speed; }
-            if (dir === 'left')  { pacman.nextDx = -pacman.speed; pacman.nextDy = 0; }
-            if (dir === 'right') { pacman.nextDx = pacman.speed;  pacman.nextDy = 0; }
-        }
-
-        document.getElementById("up").addEventListener("touchstart", (e) => { e.preventDefault(); setDirection('up'); });
-        document.getElementById("down").addEventListener("touchstart", (e) => { e.preventDefault(); setDirection('down'); });
-        document.getElementById("left").addEventListener("touchstart", (e) => { e.preventDefault(); setDirection('left'); });
-        document.getElementById("right").addEventListener("touchstart", (e) => { e.preventDefault(); setDirection('right'); });
-        
-        document.getElementById("up").addEventListener("mousedown", () => setDirection('up'));
-        document.getElementById("down").addEventListener("mousedown", () => setDirection('down'));
-        document.getElementById("left").addEventListener("mousedown", () => setDirection('left'));
-        document.getElementById("right").addEventListener("mousedown", () => setDirection('right'));
-
-        function isCollidingWithWall(x, y) {
-            let size = 8; 
-            let checkPoints = [
-                {x: x - size, y: y - size}, {x: x + size, y: y - size},
-                {x: x - size, y: y + size}, {x: x + size, y: y + size}
-            ];
-            for(let p of checkPoints) {
-                let c = Math.floor(p.x / tileSize);
-                let r = Math.floor(p.y / tileSize);
-                if(r < 0 || r >= map.length || c < 0 || c >= map[0].length || map[r][c] === 1) return true;
-            }
-            return false;
-        }
-
-        function update() {
-            if (!gameStarted || gameOver) return;
-
-            if (pacman.nextDx !== 0 || pacman.nextDy !== 0) {
-                if (!isCollidingWithWall(pacman.x + pacman.nextDx, pacman.y + pacman.nextDy)) {
-                    pacman.dx = pacman.nextDx; pacman.dy = pacman.nextDy;
-                    pacman.nextDx = 0; pacman.nextDy = 0;
-                }
-            }
-
-            if (!isCollidingWithWall(pacman.x + pacman.dx, pacman.y + pacman.dy)) {
-                pacman.x += pacman.dx; pacman.y += pacman.dy;
-            }
-
-            pacman.angle += 0.12;
-
-            for(let d of dots) {
-                if(d.active) {
-                    let dX = (d.c * tileSize + tileSize/2) - pacman.x;
-                    let dY = (d.r * tileSize + tileSize/2) - pacman.y;
-                    if(Math.sqrt(dX*dX + dY*dY) < 10) {
-                        d.active = false; score += 10; scoreElement.innerText = score;
-                        playSound('dot'); // پخش صدای خوردن نقطه
-                    }
-                }
-            }
-
-            for(let g of ghosts) {
-                let isCentered = Math.abs((g.x % tileSize) - tileSize/2) < 0.8 && Math.abs((g.y % tileSize) - tileSize/2) < 0.8;
-
-                if (isCentered) {
-                    let dirs = [{dx: g.speed, dy: 0}, {dx: -g.speed, dy: 0}, {dx: 0, dy: g.speed}, {dx: 0, dy: -g.speed}];
-                    let validDirs = dirs.filter(d => !isCollidingWithWall(g.x + d.dx, g.y + d.dy));
-                    validDirs = validDirs.filter(d => !(d.dx === -g.dx && d.dy === -g.dy));
-                    if (validDirs.length === 0) validDirs = dirs.filter(d => !isCollidingWithWall(g.x + d.dx, g.y + d.dy));
-
-                    if(validDirs.length > 0) {
-                        if (g.type === "chaser") {
-                            let bestDir = validDirs[0]; let minDist = Infinity;
-                            for (let d of validDirs) {
-                                let nextX = g.x + d.dx; let nextY = g.y + d.dy;
-                                let dist = Math.sqrt((nextX - pacman.x)**2 + (nextY - pacman.y)**2);
-                                if (dist < minDist) { minDist = dist; bestDir = d; }
-                            }
-                            g.dx = bestDir.dx; g.dy = bestDir.dy;
-                        } else {
-                            let chosen = validDirs[Math.floor(Math.random() * validDirs.length)];
-                            g.dx = chosen.dx; g.dy = chosen.dy;
-                        }
-                    }
-                }
-
-                if (!isCollidingWithWall(g.x + g.dx, g.y + g.dy)) { g.x += g.dx; g.y += g.dy; }
-
-                let dist = Math.sqrt((g.x - pacman.x)**2 + (g.y - pacman.y)**2);
-                if(dist < 13) {
-                    gameOver = true;
-                    playSound('lose'); // پخش صدای باخت
-                    setTimeout(() => {
-                        if (score > highscore) { localStorage.setItem("pacman_highscore", score); alert("🏆 رکورد جدید: " + score); }
-                        else { alert("بازی تمام شد! امتیاز: " + score); }
-                        document.location.reload();
-                    }, 500);
-                }
+        for (let d of validDirs) {
+            let nextX = g.x + d.dx;
+            let nextY = g.y + d.dy;
+            let dist = Math.sqrt((nextX - pacman.x)**2 + (nextY - pacman.y)**2);
+            
+            // روح قرمز (قرمز) همیشه دنبالت می‌آید، بقیه روح‌ها کمی تصادفی‌تر اما تهاجمی
+            let randomness = (g.color === "#ff0000") ? 0 : 0.3; 
+            if (dist < minDist && Math.random() > randomness) {
+                minDist = dist;
+                bestDir = d;
             }
         }
+        g.dx = bestDir.dx;
+        g.dy = bestDir.dy;
+    }
 
-        function draw() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.strokeStyle = "#3f51b5"; ctx.lineWidth = 3; ctx.shadowBlur = 5; ctx.shadowColor = "#3f51b5";
-            for(let r=0; r<map.length; r++) {
-                for(let c=0; c<map[r].length; c++) {
-                    if(map[r][c] === 1) ctx.strokeRect(c * tileSize + 2, r * tileSize + 2, tileSize - 4, tileSize - 4);
-                }
-            }
-            ctx.fillStyle = "#fff"; ctx.shadowColor = "#fff"; ctx.shadowBlur = 4;
-            for(let d of dots) {
-                if(d.active) { ctx.beginPath(); ctx.arc(d.c * tileSize + tileSize/2, d.r * tileSize + tileSize/2, 2.5, 0, Math.PI*2); ctx.fill(); }
-            }
-            ctx.fillStyle = "#ffeb3b"; ctx.shadowColor = "#ffeb3b"; ctx.shadowBlur = 12;
-            ctx.beginPath();
-            let sweepAngle = Math.sin(pacman.angle) * 0.25 + 0.25; let rotateAngle = 0;
-            if(pacman.dx > 0) rotateAngle = 0;
-            else if(pacman.dx < 0) rotateAngle = Math.PI;
-            else if(pacman.dy > 0) rotateAngle = Math.PI / 2;
-            else if(pacman.dy < 0) rotateAngle = -Math.PI / 2;
-            ctx.arc(pacman.x, pacman.y, 9, rotateAngle + sweepAngle, rotateAngle + Math.PI * 2 - sweepAngle);
-            ctx.lineTo(pacman.x, pacman.y); ctx.fill();
+    // اعمال حرکت
+    g.x += g.dx;
+    g.y += g.dy;
 
-            for(let g of ghosts) {
-                ctx.fillStyle = g.color; ctx.shadowColor = g.color; ctx.shadowBlur = 10;
-                ctx.beginPath(); ctx.arc(g.x, g.y, 9, Math.PI, 0, false); ctx.lineTo(g.x + 9, g.y + 9); ctx.lineTo(g.x - 9, g.y + 9); ctx.fill();
-                ctx.fillStyle = "#fff"; ctx.shadowBlur = 0;
-                ctx.beginPath(); ctx.arc(g.x - 3, g.y - 1, 2.5, 0, Math.PI*2); ctx.arc(g.x + 3, g.y - 1, 2.5, 0, Math.PI*2); ctx.fill();
-            }
-            ctx.shadowBlur = 0;
-        }
-
-        function loop() { update(); draw(); requestAnimationFrame(loop); }
-        loop();
-    </script>
-</body>
-</html>
+    // بررسی برخورد
+    let dist = Math.sqrt((g.x - pacman.x)**2 + (g.y - pacman.y)**2);
+    if(dist < 12) {
+        gameOver = true;
+        playSound('lose');
+        setTimeout(() => { location.reload(); }, 500);
+    }
+}
