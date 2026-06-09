@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <style>
+        body { margin: 0; background: #111; color: white; font-family: sans-serif; text-align: center; user-select: none; }
+        #hud { font-size: 18px; font-weight: bold; margin: 20px 0; color: #00adb5; }
+        .board { display: grid; grid-template-columns: repeat(3, 90px); grid-template-rows: repeat(3, 90px); gap: 10px; justify-content: center; margin-top: 20px; }
+        .cell { background: #222; border: 2px solid #333; border-radius: 12px; font-size: 36px; font-weight: bold; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 0 5px rgba(255,255,255,0.05); }
+        .cell.x { color: #00adb5; text-shadow: 0 0 10px #00adb5; }
+        .cell.o { color: #ff2e63; text-shadow: 0 0 10px #ff2e63; }
+        #reset-btn { margin-top: 25px; background: #333; border: 2px solid #00adb5; color: white; padding: 10px 20px; font-size: 16px; border-radius: 8px; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div id="hud">برد متوالی شما: <span id="score">0</span> | رکورد: <span id="highscore">0</span></div>
+    <div id="status" style="font-size: 16px; height: 20px;">نوبت شما (X)</div>
+    
+    <div class="board" id="board">
+        <div class="cell" data-index="0"></div>
+        <div class="cell" data-index="1"></div>
+        <div class="cell" data-index="2"></div>
+        <div class="cell" data-index="3"></div>
+        <div class="cell" data-index="4"></div>
+        <div class="cell" data-index="5"></div>
+        <div class="cell" data-index="6"></div>
+        <div class="cell" data-index="7"></div>
+        <div class="cell" data-index="8"></div>
+    </div>
+
+    <button id="reset-btn" onclick="resetBoard()">شروع مجدد</button>
+
+    <script>
+        const cells = document.querySelectorAll('.cell');
+        const statusText = document.getElementById('status');
+        const scoreElement = document.getElementById('score');
+        const highscoreElement = document.getElementById('highscore');
+        
+        let board = ["", "", "", "", "", "", "", "", ""];
+        let gameActive = true;
+        let score = 0;
+        let highscore = localStorage.getItem("xo_highscore") || 0;
+        highscoreElement.innerText = highscore;
+
+        const winPatterns = [[0,1,2], [3,4,5], [6,7,8], [0,3,6], [1,4,7], [2,5,8], [0,4,8], [2,4,6]];
+
+        cells.forEach(cell => cell.addEventListener('click', handleCellClick));
+
+        function handleCellClick(e) {
+            const index = e.target.getAttribute('data-index');
+            if (board[index] !== "" || !gameActive) return;
+
+            makeMove(index, "X");
+            if (checkWin("X")) {
+                score++;
+                scoreElement.innerText = score;
+                if(score > highscore) { highscore = score; localStorage.setItem("xo_highscore", highscore); highscoreElement.innerText = highscore; }
+                statusText.innerText = "🎉 شما بردید!";
+                gameActive = false;
+                return;
+            }
+            if (!board.includes("")) { statusText.innerText = "مساوی شد 🤝"; gameActive = false; return; }
+
+            statusText.innerText = "🤖 نوبت هوش مصنوعی...";
+            gameActive = false;
+            setTimeout(aiMove, 500);
+        }
+
+        function makeMove(index, player) {
+            board[index] = player;
+            cells[index].innerText = player;
+            cells[index].classList.add(player.toLowerCase());
+        }
+
+        function aiMove() {
+            let move = findBestMove("O") ?? findBestMove("X") ?? board.map((v, i) => v === "" ? i : null).filter(v => v !== null)[0];
+            
+            if (move !== undefined) {
+                makeMove(move, "O");
+                if (checkWin("O")) {
+                    score = 0; scoreElement.innerText = score;
+                    statusText.innerText = "❌ هوش مصنوعی برنده شد!";
+                    gameActive = false;
+                    return;
+                }
+                if (!board.includes("")) { statusText.innerText = "مساوی شد 🤝"; gameActive = false; return; }
+            }
+            gameActive = true;
+            statusText.innerText = "نوبت شما (X)";
+        }
+
+        function findBestMove(player) {
+            for (let pattern of winPatterns) {
+                let count = pattern.filter(i => board[i] === player).length;
+                let empty = pattern.filter(i => board[i] === "");
+                if (count === 2 && empty.length === 1) return empty[0];
+            }
+            return null;
+        }
+
+        function checkWin(player) {
+            return winPatterns.some(pattern => pattern.every(i => board[i] === player));
+        }
+
+        function resetBoard() {
+            board = ["", "", "", "", "", "", "", "", ""];
+            gameActive = true;
+            statusText.innerText = "نوبت شما (X)";
+            cells.forEach(cell => { cell.innerText = ""; cell.className = "cell"; });
+        }
+    </script>
+</body>
+</html>
