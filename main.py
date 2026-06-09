@@ -4,18 +4,17 @@ import os
 from http.server import SimpleHTTPRequestHandler
 from socketserver import TCPServer
 from threading import Thread
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
 
 # توکن ربات شما
 TOKEN = "8924529360:AAE04ukDwrdyqhT97N8WMBonru6s8YtqJaY"
 
-# اطلاعاتی که فرستادی
+# اطلاعات شما
 GROUP_ID = -1003960957591  
 GROUP_LINK = "https://t.me/SHOLEX_TEL"
-GAME_URL = "https://test-bot-sw55.onrender.com"
+GAME_SHORT_NAME = "Run"  # اسم کوتاهی که بات‌فادر بهت داد
 
-# لینک‌های ادمین‌ها (فعلاً ادمین ۲ و ۳ برداشته شدند تا بعداً اضافه کنی)
 ADMIN_LINKS = {
     "mahdi": "https://t.me/begoo?start=_3688788873410"
 }
@@ -29,10 +28,10 @@ async def is_member(bot, user_id):
     except:
         return False
 
-# منوی اصلی ربات
+# منوی اصلی ربات با دکمه رسمی بازی
 def get_main_keyboard():
     keyboard = [
-        [InlineKeyboardButton("🎮 شروع بازی جاخالی", web_app=WebAppInfo(url=GAME_URL))],
+        [InlineKeyboardButton("🎮 شروع بازی جاخالی", callback_data="play_game")], # دکمه بازی اصلاح شد
         [InlineKeyboardButton("ارتباط با ناشناس ادمین‌ها", callback_data="admins")],
         [InlineKeyboardButton("انتقاد و پیشنهاد", callback_data="feedback")]
     ]
@@ -64,6 +63,11 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
     user_id = query.from_user.id
 
+    # اجرای بازی (وقتی روی دکمه بازی کلیک بشه)
+    if query.data == "play_game":
+        await context.bot.send_game(chat_id=user_id, game_short_name=GAME_SHORT_NAME)
+        return
+
     # دکمه بررسی عضویت اجباری
     if query.data == "check":
         if await is_member(context.bot, user_id):
@@ -72,7 +76,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 reply_markup=get_main_keyboard()
             )
         else:
-            await query.answer(text="❌ هنوز عضو گروه نشدی! اول داخل گروه عضو شو و بعد این دکمه را بزن.", show_alert=True)
+            await query.answer(text="❌ هنوز عضو گروه نشدی! اول داخل گروه عضو شو.", show_alert=True)
         return
 
     # دکمه بازگشت به منوی اصلی
@@ -105,11 +109,19 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
             reply_markup=InlineKeyboardMarkup(keyboard)
         )
 
+# هندلر مخصوص باز کردن وب‌سایت بازی درون تلگرام
+async def game_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    if query.game_short_name == GAME_SHORT_NAME:
+        # لینک سرور رندر شما که فایل index.html رو پخش می‌کنه
+        game_url = "https://test-bot-sw55.onrender.com"
+        await query.answer(url=game_url)
+
 # وب‌سرور داخلی رندر برای بالا آوردن فایل HTML بازی روی پورت 8000
 def run_html_server():
     port = int(os.environ.get("PORT", 8000))
     class MyHandler(SimpleHTTPRequestHandler):
-        def log_message(self, format, *args): pass # غیرفعال کردن لاگ‌های سنگین دپلو
+        def log_message(self, format, *args): pass
     
     with TCPServer(("", port), MyHandler) as httpd:
         print(f"Serving HTML Game on port {port}")
@@ -117,8 +129,11 @@ def run_html_server():
 
 async def main():
     app = Application.builder().token(TOKEN).build()
+    
     app.add_handler(CommandHandler("start", start))
-    app.add_handler(CallbackQueryHandler(button))
+    app.add_handler(CallbackQueryHandler(button, pattern="^(?!inline_game).*$"))
+    # هندلر مخصوص پاسخ به درخواست اجرای بازی
+    app.add_handler(CallbackQueryHandler(game_callback))
 
     await app.initialize()
     await app.start()
@@ -133,7 +148,6 @@ async def main():
         await app.stop()
 
 if __name__ == '__main__':
-    # اجرای وب‌سرور وب‌اپ در یک ترد جداگانه
     html_server_thread = Thread(target=run_html_server, daemon=True)
     html_server_thread.start()
 
