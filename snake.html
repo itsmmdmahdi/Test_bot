@@ -11,6 +11,7 @@
         .dbtn { background: #222; border: 2px solid #ff2e63; color: white; font-size: 24px; font-weight: bold; display: flex; align-items: center; justify-content: center; border-radius: 12px; box-shadow: 0 0 8px #ff2e63; -webkit-user-select: none; }
         .dbtn:active { background: #ff2e63; transform: scale(0.95); }
         .empty { background: transparent; border: none; box-shadow: none; }
+        #hint { font-size: 14px; color: #aaa; margin-top: 2px; height: 15px; }
     </style>
 </head>
 <body>
@@ -20,6 +21,7 @@
     </div>
     
     <canvas id="snakeCanvas" width="400" height="400"></canvas>
+    <div id="hint">برای شروع بازی، یکی از دکمه‌های زیر را بزنید</div>
 
     <div class="dpad">
         <div class="empty"></div>
@@ -38,13 +40,14 @@
         const ctx = canvas.getContext("2d");
         const scoreElement = document.getElementById("score");
         const highscoreElement = document.getElementById("highscore");
+        const hintElement = document.getElementById("hint");
 
         const grid = 20;
         let count = 0;
         let score = 0;
         let isDead = false;
+        let gameStarted = false; // متغیر وضعیت شروع بازی
 
-        // خواندن رکورد مار از حافظه
         let highscore = localStorage.getItem("snake_highscore") || 0;
         highscoreElement.innerText = highscore;
 
@@ -69,10 +72,19 @@
             highscoreElement.innerText = highscore;
             apple.x = getRandomInt(0, 20) * grid; apple.y = getRandomInt(0, 20) * grid;
             isDead = false;
+            gameStarted = false; // ریست شدن وضعیت شروع در زمان باخت
+            hintElement.style.opacity = "1";
         }
 
         function changeDirection(dir) {
             if (isDead) return;
+            
+            // به محض زدن اولین دکمه، بازی شروع می‌شود
+            if (!gameStarted) {
+                gameStarted = true;
+                hintElement.style.opacity = "0"; // پنهان کردن متن راهنما
+            }
+
             if (dir === 'left' && snake.dx === 0) { snake.dx = -grid; snake.dy = 0; }
             else if (dir === 'up' && snake.dy === 0) { snake.dy = -grid; snake.dx = 0; }
             else if (dir === 'right' && snake.dx === 0) { snake.dx = grid; snake.dy = 0; }
@@ -91,6 +103,19 @@
 
         function loop() {
             requestAnimationFrame(loop);
+            
+            // رسم محیط بازی حتی در زمان متوقف بودن (برای اینکه صفحه اول بازی خالی نباشه)
+            if (!gameStarted) {
+                ctx.clearRect(0,0,canvas.width,canvas.height);
+                // رسم سیب
+                ctx.fillStyle = '#ff2e63';
+                ctx.fillRect(apple.x, apple.y, grid-1, grid-1);
+                // رسم مار ثابت
+                ctx.fillStyle = '#00adb5';
+                snake.cells.forEach(cell => ctx.fillRect(cell.x, cell.y, grid-1, grid-1));
+                return; 
+            }
+
             if (++count < 12) return; 
             count = 0;
 
