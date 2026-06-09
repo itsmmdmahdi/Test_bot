@@ -3,71 +3,62 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Sholex Game Hub</title>
+    <title>شولکس مینی گیمز</title>
     <style>
-        body { margin: 0; padding: 15px; background: linear-gradient(135deg, #111, #222); color: white; font-family: sans-serif; text-align: center; }
-        h1 { font-size: 22px; margin-bottom: 15px; color: #00adb5; }
-        .grid-container { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; max-width: 500px; margin: 0 auto; }
-        .game-card { background: #252525; border: 2px solid #333; border-radius: 15px; padding: 15px 5px; cursor: pointer; transition: 0.2s; }
-        .game-card:active { transform: scale(0.95); border-color: #00adb5; }
-        .game-icon { font-size: 35px; margin-bottom: 8px; }
-        .game-title { font-size: 14px; font-weight: bold; }
-        .back-btn { position: fixed; top: 10px; right: 10px; background: #ff2e63; color: white; border: none; padding: 8px 15px; border-radius: 8px; font-weight: bold; display: none; z-index: 100; }
-        iframe { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; border: none; background: #111; }
+        body { margin: 0; background: #111; color: white; font-family: sans-serif; text-align: center; overflow-x: hidden; }
+        header { background: #1e1e1e; padding: 20px; border-bottom: 3px solid #00adb5; box-shadow: 0 0 15px rgba(0,173,181,0.3); }
+        h1 { margin: 0; font-size: 24px; color: #00adb5; text-shadow: 0 0 10px #00adb5; }
+        .grid-container { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; padding: 20px; max-width: 500px; margin: 0 auto; }
+        .game-card { background: #222; border: 2px solid #333; border-radius: 15px; padding: 20px; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        .game-card:active { transform: scale(0.95); border-color: #00adb5; box-shadow: 0 0 10px #00adb5; }
+        .game-icon { font-size: 40px; margin-bottom: 10px; }
+        .game-title { font-size: 16px; font-weight: bold; }
+        iframe { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; border: none; background: #111; z-index: 999; }
+        #backBtn { display: none; position: fixed; top: 15px; right: 15px; background: #ff2e63; color: white; border: none; padding: 8px 16px; font-size: 14px; font-weight: bold; border-radius: 8px; z-index: 1000; box-shadow: 0 0 8px #ff2e63; }
     </style>
 </head>
 <body>
 
-    <div id="main-menu">
-        <h1>🎮 هاب بازی اختصاصی شولکس (نسخه ۶ بازیه)</h1>
-        <div class="grid-container">
-            <div class="game-card" onclick="openGame('dodge.html')">
-                <div class="game-icon">🤖</div>
-                <div class="game-title">ربات جاخالی</div>
-            </div>
-            <div class="game-card" onclick="openGame('snake.html')">
-                <div class="game-icon">🐍</div>
-                <div class="game-title">مار بازی کلاسیک</div>
-            </div>
-            <div class="game-card" onclick="openGame('xo.html')">
-                <div class="game-icon">❌</div>
-                <div class="game-title">دوز هوشمند (XO)</div>
-            </div>
-            <div class="game-card" onclick="openGame('flappy.html')">
-                <div class="game-icon">🐦</div>
-                <div class="game-title">پرنده پرشی</div>
-            </div>
-            <div class="game-card" onclick="openGame('dino.html')">
-                <div class="game-icon">🦖</div>
-                <div class="game-title">دایناسور کروم</div>
-            </div>
-            <div class="game-card" onclick="openGame('breakout.html')">
-                <div class="game-icon">🧱</div>
-                <div class="game-title">آجرشکن نئونی</div>
-            </div>
+    <header>
+        <h1>🎮 هاب بازی‌های شولکس</h1>
+    </header>
+
+    <div class="grid-container">
+        <div class="game-card" onclick="openGame('xo.html')">
+            <div class="game-icon">❌</div>
+            <div class="game-title">دوز هوشمند</div>
+        </div>
+        <div class="game-card" onclick="openGame('flappy.html')">
+            <div class="game-icon">🐦</div>
+            <div class="game-title">پرنده پرشی</div>
+        </div>
+        <div class="game-card" onclick="openGame('pacman.html')">
+            <div class="game-icon">🟡</div>
+            <div class="game-title">پک‌من نئونی</div>
+        </div>
+        <div class="game-card" onclick="openGame('breakout.html')">
+            <div class="game-icon">🧱</div>
+            <div class="game-title">آجرشکن نئونی</div>
         </div>
     </div>
 
-    <button id="back-button" class="back-btn" onclick="closeGame()">🔙 خروج</button>
-    <iframe id="game-frame" src=""></iframe>
+    <button id="backBtn" onclick="closeGame()">◀ برگشت</button>
+    <iframe id="gameFrame" src=""></iframe>
 
     <script>
-        const mainMenu = document.getElementById('main-menu');
-        const gameFrame = document.getElementById('game-frame');
-        const backButton = document.getElementById('back-button');
+        const frame = document.getElementById("gameFrame");
+        const backBtn = document.getElementById("backBtn");
 
-        function openGame(page) {
-            mainMenu.style.display = 'none';
-            gameFrame.src = page;
-            gameFrame.style.display = 'block';
-            backButton.style.display = 'block';
+        function openGame(url) {
+            frame.src = url;
+            frame.style.display = "block";
+            backBtn.style.display = "block";
         }
 
         function closeGame() {
-            gameFrame.style.display = 'none';
-            gameFrame.src = "";
-            backButton.style.display = 'none';
-            mainMenu.style.display = 'block';
+            frame.src = "";
+            frame.style.display = "none";
+            backBtn.style.display = "none";
         }
     </script>
 </body>
