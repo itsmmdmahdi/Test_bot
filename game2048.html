@@ -2,9 +2,9 @@
 <html lang="fa">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <style>
-        body { background: #111; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; font-family: sans-serif; }
+        body { background: #111; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; font-family: sans-serif; overflow: hidden; }
         #grid { display: grid; grid-template-columns: repeat(4, 70px); grid-template-rows: repeat(4, 70px); gap: 10px; background: #333; padding: 10px; border-radius: 10px; }
         .cell { width: 70px; height: 70px; background: #444; border-radius: 5px; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: bold; }
     </style>
@@ -27,6 +27,20 @@
             let empty = board.map((v, i) => v === 0 ? i : null).filter(v => v !== null);
             if(empty.length > 0) board[empty[Math.floor(Math.random() * empty.length)]] = 2;
         }
+        
+        // منطق حرکت ساده
+        let startX, startY;
+        document.addEventListener('touchstart', e => { startX = e.touches[0].clientX; startY = e.touches[0].clientY; });
+        document.addEventListener('touchend', e => {
+            let diffX = e.changedTouches[0].clientX - startX;
+            let diffY = e.changedTouches[0].clientY - startY;
+            if (Math.abs(diffX) > Math.abs(diffY)) {
+                if (Math.abs(diffX) > 30) { addNum(); draw(); } // اینجا منطق ادغام اضافه شود
+            } else {
+                if (Math.abs(diffY) > 30) { addNum(); draw(); }
+            }
+        });
+
         addNum(); addNum(); draw();
     </script>
 </body>
