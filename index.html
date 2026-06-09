@@ -2,7 +2,7 @@
 <html lang="fa" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>هاب بازی‌های شولکس</title>
     <style>
         body { margin: 0; background: #111; color: white; font-family: sans-serif; text-align: center; }
@@ -13,8 +13,27 @@
         .game-card { background: #222; border: 2px solid #333; border-radius: 15px; padding: 15px; cursor: pointer; transition: 0.2s; }
         .game-card:active { border-color: #00adb5; transform: scale(0.95); }
         .game-icon { font-size: 30px; margin-bottom: 5px; }
+        
+        /* تنظیمات فریم بازی */
         iframe { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; border: none; background: #111; z-index: 999; }
-        #backBtn { display: none; position: fixed; top: 15px; right: 15px; background: #ff2e63; color: white; border: none; padding: 8px 16px; border-radius: 8px; z-index: 1000; }
+        
+        /* دکمه خروج در پایین صفحه */
+        #backBtn {
+            display: none;
+            position: fixed;
+            bottom: 20px; /* دکمه به پایین منتقل شد */
+            left: 50%;
+            transform: translateX(-50%);
+            background: #ff2e63;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 25px;
+            z-index: 10000;
+            box-shadow: 0 4px 15px rgba(255, 46, 99, 0.3);
+        }
     </style>
 </head>
 <body>
@@ -34,55 +53,30 @@
     </div>
 
     <div class="menu-section">
-        <h2>👥 بازی‌های دونفره (لوکال)</h2>
+        <h2>👥 بازی‌های دونفره</h2>
         <div class="grid">
             <div class="game-card" onclick="openGame('xo_multi.html')"><div class="game-icon">❌</div><div>دوز دونفره</div></div>
-            </div>
+        </div>
     </div>
 
-    <button id="backBtn" onclick="closeGame()">◀ خروج</button>
+    <button id="backBtn" onclick="closeGame()">خروج از بازی</button>
     <iframe id="gameFrame"></iframe>
 
     <script>
         function openGame(url) {
-            document.getElementById("gameFrame").src = url;
-            document.getElementById("gameFrame").style.display = "block";
-            document.getElementById("backBtn").style.display = "block";
+            const frame = document.getElementById("gameFrame");
+            const btn = document.getElementById("backBtn");
+            frame.src = url;
+            frame.style.display = "block";
+            btn.style.display = "block";
         }
         function closeGame() {
-            document.getElementById("gameFrame").src = "";
-            document.getElementById("gameFrame").style.display = "none";
-            document.getElementById("backBtn").style.display = "none";
+            const frame = document.getElementById("gameFrame");
+            const btn = document.getElementById("backBtn");
+            frame.src = "";
+            frame.style.display = "none";
+            btn.style.display = "none";
         }
     </script>
-    // سیستم تشخیص Swipe برای موبایل
-let startX, startY;
-document.addEventListener('touchstart', e => {
-    startX = e.touches[0].clientX;
-    startY = e.touches[0].clientY;
-});
-
-document.addEventListener('touchend', e => {
-    let endX = e.changedTouches[0].clientX;
-    let endY = e.changedTouches[0].clientY;
-    
-    let diffX = endX - startX;
-    let diffY = endY - startY;
-
-    if (Math.abs(diffX) > Math.abs(diffY)) {
-        if (diffX > 30) move('right');
-        else if (diffX < -30) move('left');
-    } else {
-        if (diffY > 30) move('down');
-        else if (diffY < -30) move('up');
-    }
-});
-
-function move(dir) {
-    // اینجا منطق جابجایی اعداد انجام می‌شود
-    // فعلاً برای تست، یک لاگ ساده می‌گذاریم:
-    console.log("جهت حرکت: " + dir);
-    // در مرحله بعد منطق ادغام خانه‌ها را اینجا کامل می‌کنیم
-}
 </body>
 </html>
