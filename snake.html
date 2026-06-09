@@ -4,14 +4,32 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <style>
-        body { margin: 0; background: #111; color: white; font-family: sans-serif; text-align: center; overflow: hidden; }
-        canvas { background: #1a1a1a; display: block; margin: 10px auto; max-width: 95%; max-height: 80vh; border: 2px solid #333; }
-        #score { font-size: 20px; font-weight: bold; margin-top: 10px; }
+        body { margin: 0; background: #111; color: white; font-family: sans-serif; text-align: center; overflow: hidden; user-select: none; }
+        canvas { background: #1a1a1a; display: block; margin: 10px auto; max-width: 90%; max-height: 45vh; border: 2px solid #333; }
+        #score { font-size: 20px; font-weight: bold; margin-top: 5px; }
+        
+        /* استایل دسته بازی ۴ جهته */
+        .dpad { display: grid; grid-template-columns: repeat(3, 70px); grid-template-rows: repeat(3, 70px); gap: 5px; justify-content: center; margin-top: 15px; }
+        .dbtn { background: #222; border: 2px solid #ff2e63; color: white; font-size: 24px; font-weight: bold; display: flex; align-items: center; justify-content: center; border-radius: 12px; box-shadow: 0 0 8px #ff2e63; -webkit-user-select: none; }
+        .dbtn:active { background: #ff2e63; transform: scale(0.95); }
+        .empty { background: transparent; border: none; box-shadow: none; }
     </style>
 </head>
 <body>
     <div id="score">امتیاز مار: 0</div>
     <canvas id="snakeCanvas" width="400" height="400"></canvas>
+
+    <div class="dpad">
+        <div class="empty"></div>
+        <div class="dbtn" id="w">🔼</div>
+        <div class="empty"></div>
+        <div class="dbtn" id="a">◀️</div>
+        <div class="empty" style="background:#333; border-radius:5px;"></div>
+        <div class="dbtn" id="d">▶️</div>
+        <div class="empty"></div>
+        <div class="dbtn" id="s">🔽</div>
+        <div class="empty"></div>
+    </div>
 
     <script>
         const canvas = document.getElementById("snakeCanvas");
@@ -33,9 +51,28 @@
             apple.x = getRandomInt(0, 20) * grid; apple.y = getRandomInt(0, 20) * grid;
         }
 
+        // تابع تغییر جهت با دکمه‌ها
+        function changeDirection(dir) {
+            if (dir === 'left' && snake.dx === 0) { snake.dx = -grid; snake.dy = 0; }
+            else if (dir === 'up' && snake.dy === 0) { snake.dy = -grid; snake.dx = 0; }
+            else if (dir === 'right' && snake.dx === 0) { snake.dx = grid; snake.dy = 0; }
+            else if (dir === 'down' && snake.dy === 0) { snake.dy = grid; snake.dx = 0; }
+        }
+
+        // افزودن رویداد لمسی و کلیک به دکمه‌های جهت‌نما
+        document.getElementById("w").addEventListener("touchstart", () => changeDirection('up'));
+        document.getElementById("a").addEventListener("touchstart", () => changeDirection('left'));
+        document.getElementById("s").addEventListener("touchstart", () => changeDirection('down'));
+        document.getElementById("d").addEventListener("touchstart", () => changeDirection('right'));
+        
+        document.getElementById("w").addEventListener("mousedown", () => changeDirection('up'));
+        document.getElementById("a").addEventListener("mousedown", () => changeDirection('left'));
+        document.getElementById("s").addEventListener("mousedown", () => changeDirection('down'));
+        document.getElementById("d").addEventListener("mousedown", () => changeDirection('right'));
+
         function loop() {
             requestAnimationFrame(loop);
-            if (++count < 6) return; // کنترل سرعت مار
+            if (++count < 7) return; 
             count = 0;
 
             ctx.clearRect(0,0,canvas.width,canvas.height);
@@ -49,11 +86,9 @@
             snake.cells.unshift({x: snake.x, y: snake.y});
             if (snake.cells.length > snake.maxCells) snake.cells.pop();
 
-            // رسم سیب
             ctx.fillStyle = '#ff2e63';
             ctx.fillRect(apple.x, apple.y, grid-1, grid-1);
 
-            // رسم مار
             ctx.fillStyle = '#00adb5';
             snake.cells.forEach(function(cell, index) {
                 ctx.fillRect(cell.x, cell.y, grid-1, grid-1);
@@ -66,35 +101,12 @@
                 }
                 for (let i = index + 1; i < snake.cells.length; i++) {
                     if (cell.x === snake.cells[i].x && cell.y === snake.cells[i].y) {
-                        alert("مار خودش رو خورد! بازی ریست شد.");
+                        alert("بازی تمام شد!");
                         resetGame();
                     }
                 }
             });
         }
-
-        // کنترل با کیبورد و لمس سر دادن (Swipe)
-        document.addEventListener('keydown', function(e) {
-            if (e.which === 37 && snake.dx === 0) { snake.dx = -grid; snake.dy = 0; }
-            else if (e.which === 38 && snake.dy === 0) { snake.dy = -grid; snake.dx = 0; }
-            else if (e.which === 39 && snake.dx === 0) { snake.dx = grid; snake.dy = 0; }
-            else if (e.which === 40 && snake.dy === 0) { snake.dy = grid; snake.dx = 0; }
-        });
-
-        let touchstartX = 0; let touchstartY = 0;
-        document.addEventListener('touchstart', e => { touchstartX = e.changedTouches[0].screenX; touchstartY = e.changedTouches[0].screenY; });
-        document.addEventListener('touchend', e => {
-            let tendX = e.changedTouches[0].screenX; let tendY = e.changedTouches[0].screenY;
-            let xDiff = tendX - touchstartX; let yDiff = tendY - touchstartY;
-            if (Math.abs(xDiff) > Math.abs(yDiff)) {
-                if (xDiff > 0 && snake.dx === 0) { snake.dx = grid; snake.dy = 0; }
-                else if (xDiff < 0 && snake.dx === 0) { snake.dx = -grid; snake.dy = 0; }
-            } else {
-                if (yDiff > 0 && snake.dy === 0) { snake.dy = grid; snake.dx = 0; }
-                else if (yDiff < 0 && snake.dy === 0) { snake.dy = -grid; snake.dx = 0; }
-            }
-        });
-
         requestAnimationFrame(loop);
     </script>
 </body>
