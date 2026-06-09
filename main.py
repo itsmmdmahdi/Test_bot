@@ -4,9 +4,8 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
 
 TOKEN = "8924529360:AAE04ukDwrdyqhT97N8WMBonru6s8YtqJaY"
-GROUP_ID = -1003960957591  # آیدی گروه
+GROUP_ID = -1003960957591  # آیدی درست شده گروه شما
 
-# لینک‌های ناشناس (نکته: دکمه‌های تلگرام نباید لینک خالی داشته باشند، موقتاً لینک مهدی رو گذاشتم تا خودت آپدیت کنی)
 ADMIN_LINKS = {
     "mahdi": "https://t.me/begoo?start=_3688788873410",
     "admin2": "https://t.me/begoo?start=_3688788873410",
@@ -15,7 +14,7 @@ ADMIN_LINKS = {
 
 MY_FEEDBACK_LINK = "https://t.me/begoo?start=_3688788873410"
 
-# چک عضویت
+# تابع چک عضویت
 async def is_member(bot, user_id):
     try:
         member = await bot.get_chat_member(GROUP_ID, user_id)
@@ -23,13 +22,21 @@ async def is_member(bot, user_id):
     except:
         return False
 
+# تابع کمکی برای تولید منوی اصلی (برای جلوگیری از تکرار کد)
+def get_main_keyboard():
+    keyboard = [
+        [InlineKeyboardButton("ارتباط با ناشناس ادمین‌ها", callback_data="admins")],
+        [InlineKeyboardButton("انتقاد و پیشنهاد", callback_data="feedback")]
+    ]
+    return InlineKeyboardMarkup(keyboard)
+
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
 
     if not await is_member(context.bot, user_id):
         keyboard = [
-            [InlineKeyboardButton("عضویت در گروه", url="https://t.me/SHOLEX_TEL")],
+            [InlineKeyboardButton("عضویت در گروه", url="https://t.me/your_group_link")],
             [InlineKeyboardButton("بررسی عضویت", callback_data="check")]
         ]
         await update.message.reply_text(
@@ -38,14 +45,10 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         return
 
-    keyboard = [
-        [InlineKeyboardButton("ارتباط با ناشناس ادمین‌ها", callback_data="admins")],
-        [InlineKeyboardButton("انتقاد و پیشنهاد", callback_data="feedback")]
-    ]
-
+    # ارسال منوی اصلی در دستور start
     await update.message.reply_text(
         "یکی از گزینه‌ها رو انتخاب کن:",
-        reply_markup=InlineKeyboardMarkup(keyboard)
+        reply_markup=get_main_keyboard()
     )
 
 
@@ -55,53 +58,64 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     user_id = query.from_user.id
 
-    # بررسی عضویت دوباره
+    # بررسی عضویت
     if query.data == "check":
         if await is_member(context.bot, user_id):
-            await query.message.reply_text("عضویت تایید شد ✅ /start رو بزن")
+            # اگر عضو بود، پیام قبلی ویرایش میشه به منوی اصلی و دیگه پیام اضافه ساخته نمیشه
+            await query.edit_message_text(
+                text="عضویت شما تایید شد ✅\nیکی از گزینه‌ها رو انتخاب کن:",
+                reply_markup=get_main_keyboard()
+            )
         else:
-            await query.message.reply_text("هنوز عضو نشدی ❌")
+            # استفاده از alert برای اینکه پیام اضافی فرستاده نشه و فقط یک پیغام پاپ‌آپ باز بشه
+            await query.answer(text="هنوز عضو نشدی ❌ اول داخل گروه عضو شو.", show_alert=True)
         return
 
-    # منوی ادمین‌ها
+    # بازگشت به منوی اصلی
+    if query.data == "back_to_main":
+        await query.edit_message_text(
+            text="یکی از گزینه‌ها رو انتخاب کن:",
+            reply_markup=get_main_keyboard()
+        )
+        return
+
+    # منوی ادمین‌ها (ویرایش پیام قبلی + اضافه شدن دکمه بازگشت)
     if query.data == "admins":
         keyboard = [
             [InlineKeyboardButton("mahdi", url=ADMIN_LINKS["mahdi"])],
             [InlineKeyboardButton("ادمین 2", url=ADMIN_LINKS["admin2"])],
-            [InlineKeyboardButton("ادمین 3", url=ADMIN_LINKS["admin3"])]
+            [InlineKeyboardButton("ادمین 3", url=ADMIN_LINKS["admin3"])],
+            [InlineKeyboardButton("🔙 بازگشت", callback_data="back_to_main")] # دکمه بازگشت
         ]
-        await query.message.reply_text(
-            "یکی از ادمین‌ها رو انتخاب کن:",
+        await query.edit_message_text(
+            text="یکی از ادمین‌ها رو انتخاب کن:",
             reply_markup=InlineKeyboardMarkup(keyboard)
         )
 
-    # انتقاد و پیشنهاد
+    # انتقاد و پیشنهاد (ویرایش پیام قبلی + اضافه شدن دکمه بازگشت)
     elif query.data == "feedback":
         keyboard = [
-            [InlineKeyboardButton("ارسال پیام", url=MY_FEEDBACK_LINK)]
+            [InlineKeyboardButton("ارسال پیام", url=MY_FEEDBACK_LINK)],
+            [InlineKeyboardButton("🔙 بازگشت", callback_data="back_to_main")] # دکمه بازگشت
         ]
-        await query.message.reply_text(
-            "از اینجا پیام بده 👇",
+        await query.edit_message_text(
+            text="از اینجا پیام بده 👇",
             reply_markup=InlineKeyboardMarkup(keyboard)
         )
 
 
 async def main():
-    # ساخت اپلیکیشن ربات
     app = Application.builder().token(TOKEN).build()
 
-    # ثبت هندلرها
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CallbackQueryHandler(button))
 
-    # راه‌اندازی اصولی ربات سازگار با محیط‌های ابری سرور
     await app.initialize()
     await app.start()
     await app.updater.start_polling(allowed_updates=Update.ALL_TYPES)
     
     print("Bot is running...")
     
-    # روشن نگه داشتن اسکریپت در سرور
     try:
         while True:
             await asyncio.sleep(3600)
@@ -110,8 +124,6 @@ async def main():
         await app.stop()
 
 if __name__ == '__main__':
-    # حل مشکل Event Loop روی سرورهای لینوکسی و رندر
     if sys.platform == 'win32':
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
-    
     asyncio.run(main())
